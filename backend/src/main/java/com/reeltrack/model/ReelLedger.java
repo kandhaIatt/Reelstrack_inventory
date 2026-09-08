@@ -1,8 +1,14 @@
 package com.reeltrack.model;
 
-import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "reel_ledger")
@@ -13,13 +19,13 @@ public class ReelLedger {
     private Long id;
 
     @Column(nullable = false)
-    private Long reelId;
+    private String reelId;
 
     @Column(nullable = false)
     private String reelNumber;
 
     @Column(nullable = false)
-    private String transactionType; // RECEIPT, OPENING_BALANCE, JOB, ADJUSTMENT, TRANSFER, WRITE_OFF, REVERSAL, CORRECTION
+    private String transactionType;
 
     @Column(nullable = false, precision = 12, scale = 4)
     private BigDecimal deltaKg;
@@ -29,9 +35,9 @@ public class ReelLedger {
 
     private String unitId;
 
-    private String referenceId; // e.g. PO-101, JOB-202, TRF-303, ADJ-404
+    private String referenceId;
 
-    private Long actorId;
+    private String actorId;
 
     private String actorName;
 
@@ -45,7 +51,18 @@ public class ReelLedger {
         this.timestamp = LocalDateTime.now();
     }
 
-    public ReelLedger(Long reelId, String reelNumber, String transactionType, BigDecimal deltaKg, BigDecimal runningBalanceKg, String unitId, String referenceId, Long actorId, String actorName, String notes) {
+    public ReelLedger(
+            String reelId,
+            String reelNumber,
+            String transactionType,
+            BigDecimal deltaKg,
+            BigDecimal runningBalanceKg,
+            String unitId,
+            String referenceId,
+            String actorId,
+            String actorName,
+            String notes) {
+
         this.reelId = reelId;
         this.reelNumber = reelNumber;
         this.transactionType = transactionType;
@@ -59,7 +76,6 @@ public class ReelLedger {
         this.timestamp = LocalDateTime.now();
     }
 
-    // Getters and Setters (Append-only: Setters for JPA hydration)
     public Long getId() {
         return id;
     }
@@ -68,11 +84,11 @@ public class ReelLedger {
         this.id = id;
     }
 
-    public Long getReelId() {
+    public String getReelId() {
         return reelId;
     }
 
-    public void setReelId(Long reelId) {
+    public void setReelId(String reelId) {
         this.reelId = reelId;
     }
 
@@ -124,11 +140,11 @@ public class ReelLedger {
         this.referenceId = referenceId;
     }
 
-    public Long getActorId() {
+    public String getActorId() {
         return actorId;
     }
 
-    public void setActorId(Long actorId) {
+    public void setActorId(String actorId) {
         this.actorId = actorId;
     }
 
@@ -156,3 +172,4 @@ public class ReelLedger {
         this.timestamp = timestamp;
     }
 }
+
