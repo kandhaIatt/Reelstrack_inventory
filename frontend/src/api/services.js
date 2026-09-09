@@ -40,9 +40,24 @@ export const transfersApi = {
 };
 
 export const mastersApi = {
-  getUnits: () => client.get('/units'),
-  getMills: () => client.get('/mills'),
-  getReelTypes: () => client.get('/reel-types'),
+  getUnits: (params) => client.get('/units', { params }),
+  createUnit: (data) => client.post('/units', data),
+  updateUnit: (id, data) => client.put(`/units/${id}`, data),
+  toggleUnitActive: (id) => client.patch(`/units/${id}/toggle-active`),
+
+  getMills: (params) => client.get('/mills', { params }),
+  createMill: (data) => client.post('/mills', data),
+  updateMill: (id, data) => client.put(`/mills/${id}`, data),
+  toggleMillActive: (id) => client.patch(`/mills/${id}/toggle-active`),
+
+  getReelTypes: (params) => client.get('/reel-types', { params }),
+  createReelType: (data) => client.post('/reel-types', data),
+  updateReelType: (id, data) => client.put(`/reel-types/${id}`, data),
+  toggleReelTypeActive: (id) => client.patch(`/reel-types/${id}/toggle-active`),
+
+  getConfig: () => client.get('/config'),
+  updateConfig: (data) => client.put('/config', data),
+
   getSuppliers: () => client.get('/suppliers'),
   getUsers: () => client.get('/users'),
 };

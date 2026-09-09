@@ -10,11 +10,13 @@ import org.springframework.transaction.annotation.Transactional;
 import com.reeltrack.dto.DTOs.POCreateRequest;
 import com.reeltrack.dto.DTOs.ReceiveReelRequest;
 import com.reeltrack.model.ActivityLog;
+import com.reeltrack.model.BusinessConfig;
 import com.reeltrack.model.POItem;
 import com.reeltrack.model.PurchaseOrder;
 import com.reeltrack.model.Reel;
 import com.reeltrack.model.Supplier;
 import com.reeltrack.repository.ActivityLogRepository;
+import com.reeltrack.repository.BusinessConfigRepository;
 import com.reeltrack.repository.PORepository;
 import com.reeltrack.repository.ReelRepository;
 import com.reeltrack.repository.SupplierRepository;
@@ -26,13 +28,16 @@ public class POService {
     private final ReelRepository reelRepository;
     private final SupplierRepository supplierRepository;
     private final ActivityLogRepository activityLogRepository;
+    private final BusinessConfigRepository businessConfigRepository;
 
     public POService(PORepository poRepository, ReelRepository reelRepository,
-                     SupplierRepository supplierRepository, ActivityLogRepository activityLogRepository) {
+                     SupplierRepository supplierRepository, ActivityLogRepository activityLogRepository,
+                     BusinessConfigRepository businessConfigRepository) {
         this.poRepository = poRepository;
         this.reelRepository = reelRepository;
         this.supplierRepository = supplierRepository;
         this.activityLogRepository = activityLogRepository;
+        this.businessConfigRepository = businessConfigRepository;
     }
 
     @Transactional
@@ -185,9 +190,18 @@ public class POService {
                 .map(this::reelNumber)
                 .orElse(21078) + 1;
 
+        BusinessConfig config = businessConfigRepository.findById("DEFAULT")
+                .orElse(new BusinessConfig());
+        String formatPattern = config.getReelNumberFormat();
+
         String candidate;
         do {
-            candidate = "R-" + nextNumber++;
+            String seqStr = String.valueOf(nextNumber++);
+            if (formatPattern != null && formatPattern.contains("{SEQ}")) {
+                candidate = formatPattern.replace("{SEQ}", seqStr);
+            } else {
+                candidate = "R-" + seqStr;
+            }
         } while (reelRepository.existsById(candidate));
 
         return candidate;
@@ -195,7 +209,9 @@ public class POService {
 
     private int reelNumber(String reelId) {
         try {
-            return Integer.parseInt(reelId.substring(2));
+            // Extract digits from reelId
+            String digits = reelId.replaceAll("\\D+", "");
+            return Integer.parseInt(digits);
         } catch (RuntimeException ignored) {
             return 21078;
         }

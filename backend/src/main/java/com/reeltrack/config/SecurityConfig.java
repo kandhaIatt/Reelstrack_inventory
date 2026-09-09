@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -50,13 +51,16 @@ public class SecurityConfig {
                 CorsConfiguration config = new CorsConfiguration();
 
                 config.setAllowedOrigins(List.of(
-                    "http://localhost:5173"
+                    "http://localhost:5173",
+                    "http://localhost:3000",
+                    "http://127.0.0.1:5173"
                 ));
 
                 config.setAllowedMethods(List.of(
                     "GET",
                     "POST",
                     "PUT",
+                    "PATCH",
                     "DELETE",
                     "OPTIONS"
                 ));
@@ -77,24 +81,30 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
 
               // Public - Authentication
-             .requestMatchers("/api/auth/**").permitAll()
+              .requestMatchers("/api/auth/**").permitAll()
 
-              // Public - Swagger / OpenAPI
-             .requestMatchers("/**").permitAll()
+              // Public reads for master dropdowns, units, mills, reel types, config for all authenticated users
+              .requestMatchers(HttpMethod.GET, "/api/units", "/api/mills", "/api/reel-types", "/api/config", "/api/suppliers").authenticated()
 
-              // Admin only
-             .requestMatchers(
-                "/api/users/**",
-                "/api/admin/**",
-                "/api/pos",
-                "/api/pos/*/approve",
-                "/api/pos/*/cancel",
-                "/api/pos/*/receive",
-                "/api/transfers"
-             ).hasRole("ADMIN")
+              // Admin-only master writes & config updates
+              .requestMatchers(HttpMethod.POST, "/api/units/**", "/api/mills/**", "/api/reel-types/**").hasRole("ADMIN")
+              .requestMatchers(HttpMethod.PUT, "/api/units/**", "/api/mills/**", "/api/reel-types/**", "/api/config/**").hasRole("ADMIN")
+              .requestMatchers(HttpMethod.PATCH, "/api/units/**", "/api/mills/**", "/api/reel-types/**").hasRole("ADMIN")
+              .requestMatchers(HttpMethod.DELETE, "/api/units/**", "/api/mills/**", "/api/reel-types/**").hasRole("ADMIN")
 
-             // Everything else requires login
-             .anyRequest().authenticated()
+              // Admin only user management and sensitive ops
+              .requestMatchers(
+                 "/api/users/**",
+                 "/api/admin/**",
+                 "/api/pos",
+                 "/api/pos/*/approve",
+                 "/api/pos/*/cancel",
+                 "/api/pos/*/receive",
+                 "/api/transfers"
+              ).hasRole("ADMIN")
+
+              // Everything else requires login
+              .anyRequest().authenticated()
 
              )
 

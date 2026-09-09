@@ -12,33 +12,38 @@ import java.util.List;
 @Component
 public class DataInitializer implements CommandLineRunner {
 
-        private final UserRepository userRepository;
-        private final UnitRepository unitRepository;
-        private final MillRepository millRepository;
-        private final SupplierRepository supplierRepository;
-        private final ReelRepository reelRepository;
-        private final CuttingJobRepository jobRepository;
-        private final PORepository poRepository;
-        private final TransferRepository transferRepository;
-        private final ActivityLogRepository activityLogRepository;
-        private final PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
+    private final UnitRepository unitRepository;
+    private final MillRepository millRepository;
+    private final ReelTypeRepository reelTypeRepository;
+    private final BusinessConfigRepository businessConfigRepository;
+    private final SupplierRepository supplierRepository;
+    private final ReelRepository reelRepository;
+    private final CuttingJobRepository jobRepository;
+    private final PORepository poRepository;
+    private final TransferRepository transferRepository;
+    private final ActivityLogRepository activityLogRepository;
+    private final PasswordEncoder passwordEncoder;
 
-        public DataInitializer(UserRepository userRepository, UnitRepository unitRepository,
-                                                   MillRepository millRepository, SupplierRepository supplierRepository,
-                                                   ReelRepository reelRepository, CuttingJobRepository jobRepository,
-                                                   PORepository poRepository, TransferRepository transferRepository,
-                                                   ActivityLogRepository activityLogRepository, PasswordEncoder passwordEncoder) {
-                this.userRepository = userRepository;
-                this.unitRepository = unitRepository;
-                this.millRepository = millRepository;
-                this.supplierRepository = supplierRepository;
-                this.reelRepository = reelRepository;
-                this.jobRepository = jobRepository;
-                this.poRepository = poRepository;
-                this.transferRepository = transferRepository;
-                this.activityLogRepository = activityLogRepository;
-                this.passwordEncoder = passwordEncoder;
-        }
+    public DataInitializer(UserRepository userRepository, UnitRepository unitRepository,
+                           MillRepository millRepository, ReelTypeRepository reelTypeRepository,
+                           BusinessConfigRepository businessConfigRepository, SupplierRepository supplierRepository,
+                           ReelRepository reelRepository, CuttingJobRepository jobRepository,
+                           PORepository poRepository, TransferRepository transferRepository,
+                           ActivityLogRepository activityLogRepository, PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.unitRepository = unitRepository;
+        this.millRepository = millRepository;
+        this.reelTypeRepository = reelTypeRepository;
+        this.businessConfigRepository = businessConfigRepository;
+        this.supplierRepository = supplierRepository;
+        this.reelRepository = reelRepository;
+        this.jobRepository = jobRepository;
+        this.poRepository = poRepository;
+        this.transferRepository = transferRepository;
+        this.activityLogRepository = activityLogRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     @Override
     public void run(String... args) throws Exception {
@@ -78,24 +83,44 @@ public class DataInitializer implements CommandLineRunner {
 
         // 2. Units
         unitRepository.saveAll(Arrays.asList(
-                Unit.builder().id("U1").name("Chennai Unit").code("CHN").city("Chennai").incharge("R. Karthik").targetReels(32).targetWeight(8420.0).targetJobs(4).build(),
-                Unit.builder().id("U2").name("Bangalore Unit").code("BLR").city("Bengaluru").incharge("S. Prakash").targetReels(24).targetWeight(6850.0).targetJobs(3).build(),
-                Unit.builder().id("U3").name("Hyderabad Unit").code("HYD").city("Hyderabad").incharge("M. Venkatesh").targetReels(18).targetWeight(5230.0).targetJobs(2).build(),
-                Unit.builder().id("U4").name("Coimbatore Unit").code("CBE").city("Coimbatore").incharge("A. Devaraj").targetReels(21).targetWeight(5940.0).targetJobs(2).build(),
-                Unit.builder().id("U5").name("Pondicherry Unit").code("PDY").city("Puducherry").incharge("J. Anbarasan").targetReels(17).targetWeight(4610.0).targetJobs(2).build(),
-                Unit.builder().id("U6").name("Madurai Unit").code("MDU").city("Madurai").incharge("K. Sathish").targetReels(16).targetWeight(4230.0).targetJobs(1).build()
+                Unit.builder().id("U1").name("Chennai Unit").code("CHN").city("Chennai").stateCode("TN").incharge("R. Karthik").targetReels(32).targetWeight(8420.0).targetJobs(4).active(true).build(),
+                Unit.builder().id("U2").name("Bangalore Unit").code("BLR").city("Bengaluru").stateCode("KA").incharge("S. Prakash").targetReels(24).targetWeight(6850.0).targetJobs(3).active(true).build(),
+                Unit.builder().id("U3").name("Hyderabad Unit").code("HYD").city("Hyderabad").stateCode("AP").incharge("M. Venkatesh").targetReels(18).targetWeight(5230.0).targetJobs(2).active(true).build(),
+                Unit.builder().id("U4").name("Coimbatore Unit").code("CBE").city("Coimbatore").stateCode("TN").incharge("A. Devaraj").targetReels(21).targetWeight(5940.0).targetJobs(2).active(true).build(),
+                Unit.builder().id("U5").name("Pondicherry Unit").code("PDY").city("Puducherry").stateCode("PY").incharge("J. Anbarasan").targetReels(17).targetWeight(4610.0).targetJobs(2).active(true).build(),
+                Unit.builder().id("U6").name("Madurai Unit").code("MDU").city("Madurai").stateCode("TN").incharge("K. Sathish").targetReels(16).targetWeight(4230.0).targetJobs(1).active(true).build()
         ));
 
         // 3. Mills
         millRepository.saveAll(Arrays.asList(
-                Mill.builder().id("M1").name("Suvarna Durga").place("Rajahmundry, AP").grades("Kraft 90–180 GSM").build(),
-                Mill.builder().id("M2").name("ABC Papers").place("Sivakasi, TN").grades("Kraft & Duplex").build(),
-                Mill.builder().id("M3").name("Sri Lakshmi Papers").place("Nellore, AP").grades("Semi-Kraft, Duplex").build(),
-                Mill.builder().id("M4").name("Tamil Nadu Kraft").place("Karur, TN").grades("Kraft 100–160 GSM").build(),
-                Mill.builder().id("M5").name("South India Paper Mills").place("Mysuru, KA").grades("High BF Kraft").build()
+                Mill.builder().id("M1").name("Suvarna Durga").place("Rajahmundry, AP").grades("Kraft 90–180 GSM").active(true).build(),
+                Mill.builder().id("M2").name("ABC Papers").place("Sivakasi, TN").grades("Kraft & Duplex").active(true).build(),
+                Mill.builder().id("M3").name("Sri Lakshmi Papers").place("Nellore, AP").grades("Semi-Kraft, Duplex").active(true).build(),
+                Mill.builder().id("M4").name("Tamil Nadu Kraft").place("Karur, TN").grades("Kraft 100–160 GSM").active(true).build(),
+                Mill.builder().id("M5").name("South India Paper Mills").place("Mysuru, KA").grades("High BF Kraft").active(true).build()
         ));
 
-        // 4. Suppliers
+        // 4. Reel Types
+        reelTypeRepository.saveAll(Arrays.asList(
+                ReelType.builder().id("RT-1").name("Kraft").defaultGsm(120).defaultBf(18).active(true).build(),
+                ReelType.builder().id("RT-2").name("Semi-Kraft").defaultGsm(100).defaultBf(16).active(true).build(),
+                ReelType.builder().id("RT-3").name("Duplex Board").defaultGsm(150).defaultBf(0).active(true).build(),
+                ReelType.builder().id("RT-4").name("Test Liner").defaultGsm(130).defaultBf(18).active(true).build(),
+                ReelType.builder().id("RT-5").name("Golden Kraft").defaultGsm(140).defaultBf(22).active(true).build()
+        ));
+
+        // 5. Business Configuration
+        businessConfigRepository.save(
+                BusinessConfig.builder()
+                        .id("DEFAULT")
+                        .reelNumberFormat("R-{SEQ}")
+                        .corrugationFactor(0.45)
+                        .poNumberFormat("PO-2026-{SEQ:4}")
+                        .defaultGstRate(18.0)
+                        .build()
+        );
+
+        // 6. Suppliers
         supplierRepository.saveAll(Arrays.asList(
                 Supplier.builder().id("S1").name("Suvarna Durga Paper Mills").mill("Suvarna Durga").gst("37AAECS1234K1Z9").contact("V. Ramana").phone("+91 98490 22114").terms("30 Days").build(),
                 Supplier.builder().id("S2").name("ABC Papers Pvt Ltd").mill("ABC Papers").gst("33AABCA5566P1ZT").contact("N. Selvam").phone("+91 94433 78120").terms("45 Days").build(),
@@ -107,7 +132,7 @@ public class DataInitializer implements CommandLineRunner {
                 Supplier.builder().id("S8").name("Kaveri Paper Traders").mill("Tamil Nadu Kraft").gst("33AAJFK4590C1ZD").contact("T. Ilango").phone("+91 96770 33418").terms("45 Days").build()
         ));
 
-        // 5. Reels
+        // 7. Reels
         List<Reel> reels = Arrays.asList(
                 Reel.builder().id("R-21056").type("Kraft").gsm(120).bf(18).width(80).orig(412.0).remaining(412.0).mill("Suvarna Durga").unit("U1").rec("05 Aug 2026").po("PO-2026-0045").build(),
                 Reel.builder().id("R-21057").type("Kraft").gsm(140).bf(20).width(80).orig(426.0).remaining(261.36).mill("Suvarna Durga").unit("U1").rec("02 Aug 2026").po("PO-2026-0044").build(),
@@ -130,7 +155,7 @@ public class DataInitializer implements CommandLineRunner {
         );
         reelRepository.saveAll(reels);
 
-        // 6. Cutting Jobs
+        // 8. Cutting Jobs
         List<CuttingJob> jobs = Arrays.asList(
                 CuttingJob.builder().no("JOB-001").reel("R-21063").unit("U1").w(80).l(63).gsm(120).sheets(3000).corr(true).f(0.45).effGsm(174.0).kg(263.088).after(148.912).date("11 Aug 2026").time("11:42 AM").status("Completed").op("R. Karthik").build(),
                 CuttingJob.builder().no("JOB-002").reel("R-21063").unit("U1").w(80).l(64).gsm(120).sheets(1000).corr(false).f(0.0).effGsm(120.0).kg(61.44).after(87.472).date("11 Aug 2026").time("02:15 PM").status("Completed").op("R. Karthik").build(),
@@ -155,7 +180,7 @@ public class DataInitializer implements CommandLineRunner {
         );
         jobRepository.saveAll(jobs);
 
-        // 7. Purchase Orders
+        // 9. Purchase Orders
         PurchaseOrder po48 = PurchaseOrder.builder()
                 .id("PO-2026-0048").supplier("S1").unit("U1").date("11 Aug 2026").eta("18 Aug 2026").terms("30 Days")
                 .status("Pending Approval").received(0).raisedBy("Admin (Head Office)").notes("Urgent top-up for corrugation line 2.")
@@ -189,14 +214,14 @@ public class DataInitializer implements CommandLineRunner {
 
         poRepository.saveAll(Arrays.asList(po48, po47, po46, po45));
 
-        // 8. Transfers
+        // 10. Transfers
         transferRepository.saveAll(Arrays.asList(
                 Transfer.builder().ref("TRF-2026-0091").reel("R-21068").fromUnit("U1").toUnit("U3").kg(415.0).date("10 Aug 2026").byUser("R. Karthik").notes("Balancing stock for export order").build(),
                 Transfer.builder().ref("TRF-2026-0090").reel("R-21072").fromUnit("U1").toUnit("U6").kg(408.0).date("09 Aug 2026").byUser("R. Karthik").notes("").build(),
                 Transfer.builder().ref("TRF-2026-0089").reel("R-21064").fromUnit("U3").toUnit("U6").kg(372.0).date("08 Aug 2026").byUser("M. Venkatesh").notes("Madurai shortfall").build()
         ));
 
-        // 9. Activity Logs
+        // 11. Activity Logs
         activityLogRepository.saveAll(Arrays.asList(
                 ActivityLog.builder().icon("transfer").tone("info").title("Reel R-21068 transferred").sub("Chennai Unit → Hyderabad Unit").time("2 hours ago").build(),
                 ActivityLog.builder().icon("scissors").tone("ok").title("Job completed").sub("R-21063 · 263.088 kg consumed").time("Today, 11:42 AM").build(),
