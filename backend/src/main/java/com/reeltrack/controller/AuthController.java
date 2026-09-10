@@ -1,13 +1,17 @@
 package com.reeltrack.controller;
 
-import com.reeltrack.model.User;
-import com.reeltrack.service.AuthService;
-import com.reeltrack.service.AuthService.LoginResult;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
+import  com.reeltrack.model.User;
+import com.reeltrack.service.AuthService;
+import com.reeltrack.service.AuthService.LoginResult;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -70,42 +74,56 @@ public class AuthController {
         );
     }
 
-    @GetMapping("/me")
-    public ResponseEntity<?> me(
-            org.springframework.security.core.Authentication authentication) {
+   @SecurityRequirement(name = "bearerAuth")
+   @GetMapping("/me")
+     public ResponseEntity<?> me(
+        org.springframework.security.core.Authentication authentication) {
 
-        return ResponseEntity.ok(
-            new Object() {
-                public final String username =
-                        authentication.getName();
+        if (authentication == null || !authentication.isAuthenticated()) {
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(new ErrorResponse("Not authenticated"));
+        }
 
-                public final String role =
-                        authentication
-                            .getAuthorities()
-                            .iterator()
-                            .next()
-                            .getAuthority()
-                            .replace("ROLE_", "");
-            }
+       User user = authService.getCurrentUser(authentication.getName());
+
+         return ResponseEntity.ok(
+            new MeResponse(
+              user.getId(),
+              user.getUsername(),
+              user.getName(),
+              user.getRole().name(),
+              user.getUnitId(),
+              user.isPasswordChangeRequired()
+            )
         );
     }
 
-    public record LoginRequest(
-            String username,
-            String password
-    ) {}
+       public record LoginRequest(
+          String username,
+          String password
+        ) {}
 
-    public record LoginResponse(
-            String token,
-            Long userId,
-            String username,
-            String name,
-            String role,
-            String unitId,
-            boolean passwordChangeRequired
-    ) {}
+        public record LoginResponse(
+         String token,
+         Long userId,
+         String username,
+         String name,
+         String role,
+         String unitId,
+         boolean passwordChangeRequired
+        ) {}
 
-    public record ErrorResponse(
-            String message
-    ) {}
+        public record MeResponse(
+        Long userId,
+        String username,
+        String name,
+        String role,
+        String unitId,
+        boolean passwordChangeRequired
+        ) {}
+
+        public record ErrorResponse(
+         String message
+        ) {}
 }

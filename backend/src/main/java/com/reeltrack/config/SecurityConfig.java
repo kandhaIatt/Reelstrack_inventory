@@ -80,8 +80,15 @@ public class SecurityConfig {
 
             .authorizeHttpRequests(auth -> auth
 
-              // Public - Authentication
-              .requestMatchers("/api/auth/**").permitAll()
+    // Public - Swagger / OpenAPI
+             .requestMatchers(
+             "/swagger-ui/**",
+             "/swagger-ui.html",
+             "/v3/api-docs/**"
+             ).permitAll()
+
+    // Public - Authentication
+            .requestMatchers("/api/auth/**").permitAll()
 
               // Public reads for master dropdowns, units, mills, reel types, config for all authenticated users
               .requestMatchers(HttpMethod.GET, "/api/units", "/api/mills", "/api/reel-types", "/api/config", "/api/suppliers").authenticated()

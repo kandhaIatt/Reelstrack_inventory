@@ -1,13 +1,14 @@
 package com.reeltrack.service;
 
-import com.reeltrack.model.User;
-import com.reeltrack.repository.UserRepository;
-import com.reeltrack.security.JwtUtil;
+import java.time.LocalDateTime;
 
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import com.reeltrack.model.User;
+import com.reeltrack.repository.UserRepository;
+import com.reeltrack.security.JwtUtil;
 
 @Service
 public class AuthService {
@@ -161,6 +162,11 @@ public class AuthService {
         userRepository.save(user);
     }
 
+    public User getCurrentUser(String username) {
+    return userRepository.findByUsernameIgnoreCase(username)
+            .orElseThrow(() ->
+                    new UsernameNotFoundException("User not found"));
+    }
     // =============================
     // Login Result
     // =============================

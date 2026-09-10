@@ -2,4 +2,5 @@ com\reeltrack\service\AuthServiceTest.class
 com\reeltrack\service\TransferServiceTest.class
 com\reeltrack\service\JobServiceTest.class
 com\reeltrack\repository\RepositoryPersistenceTest.class
+com\reeltrack\service\POServiceTest.class
 com\reeltrack\controller\SecurityApiIntegrationTest.class
