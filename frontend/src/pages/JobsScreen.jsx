@@ -1,25 +1,60 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useApp } from '../context/AppContext';
 import { jobsApi } from '../api/services';
-import { Search, Plus, Rows, Grid, Download, Scissors } from 'lucide-react';
+import { Search, Plus, Rows, Grid, Download, Scissors, RotateCcw } from 'lucide-react';
 import { downloadCsv } from '../utils/exportCsv';
 
 export default function JobsScreen() {
   const { user } = useAuth();
+  const { showToast } = useApp();
   const navigate = useNavigate();
   const isAdmin = user?.role === 'ADMIN';
 
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [viewMode, setViewMode] = useState('table');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const search = searchParams.get('q') || '';
+  const viewMode = searchParams.get('view') || 'table';
 
-  useEffect(() => {
+  const setSearch = (q) => {
+    setSearchParams(prev => {
+      if (q) prev.set('q', q);
+      else prev.delete('q');
+      return prev;
+    }, { replace: true });
+  };
+
+  const setViewMode = (view) => {
+    setSearchParams(prev => {
+      if (view && view !== 'table') prev.set('view', view);
+      else prev.delete('view');
+      return prev;
+    }, { replace: true });
+  };
+
+  const loadJobs = () => {
+    setLoading(true);
     jobsApi.getAll(isAdmin ? null : user?.unitId)
       .then((res) => setJobs(res.data))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadJobs();
   }, [isAdmin, user]);
+
+  const handleReverse = async (id) => {
+    if (!window.confirm(`Are you sure you want to reverse job ${id}? This will restore the reel weight.`)) return;
+    try {
+      await jobsApi.reverseJob(id);
+      showToast('Job Reversed', `Job ${id} reversed successfully`);
+      loadJobs();
+    } catch (err) {
+      showToast('Error', err.response?.data?.message || 'Failed to reverse job', true);
+    }
+  };
 
   const n0 = (v) => Math.round(Number(v || 0)).toLocaleString('en-IN');
   const n3 = (v) => Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
@@ -30,7 +65,7 @@ export default function JobsScreen() {
     return true;
   });
 
-  const totalConsumedKg = filtered.reduce((s, j) => s + (j.status === 'Completed' ? j.kg : 0), 0);
+  const totalConsumedKg = filtered.reduce((s, j) => s + (j.status === 'Completed' ? j.totalKg || j.kg : 0), 0);
   const exportJobs = () => downloadCsv('cutting-jobs.csv', [
     { label: 'Job No', value: (job) => job.no },
     { label: 'Reel', value: (job) => job.reel },
@@ -39,7 +74,9 @@ export default function JobsScreen() {
     { label: 'Length (cm)', value: (job) => job.l },
     { label: 'GSM', value: (job) => job.gsm },
     { label: 'Sheets', value: (job) => job.sheets },
-    { label: 'Consumed (kg)', value: (job) => job.kg },
+    { label: 'Output (kg)', value: (job) => job.kg },
+    { label: 'Waste (kg)', value: (job) => job.waste || 0 },
+    { label: 'Total Consumed (kg)', value: (job) => job.totalKg || job.kg },
     { label: 'Balance (kg)', value: (job) => job.after },
     { label: 'Status', value: (job) => job.status },
   ], filtered);
@@ -101,59 +138,82 @@ export default function JobsScreen() {
                 <tr>
                   <th>Job No</th>
                   <th>Reel</th>
-                  <th>Sheet size</th>
-                  <th className="r">Sheets</th>
-                  <th>GSM</th>
-                  <th className="r">Eff. GSM</th>
-                  <th className="r">Consumed</th>
-                  <th className="r">Balance</th>
-                  <th>When</th>
+                  <th>Size</th>
+                  <th>Sheets</th>
+                  <th>Output</th>
+                  <th>Waste</th>
+                  <th>Consumed</th>
                   <th>Status</th>
+                  {isAdmin && <th>Actions</th>}
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((j) => (
-                  <tr key={j.no} onClick={() => navigate(`/reels/${j.reel}`)}>
-                    <td className="id num">{j.no}</td>
-                    <td className="num">{j.reel}<div className="dim">{j.unit}</div></td>
-                    <td className="num">{j.w} × {j.l} cm</td>
-                    <td className="r num">{n0(j.sheets)}</td>
-                    <td className="num">{j.gsm}</td>
-                    <td className="r num">{Math.round(j.effGsm)}</td>
-                    <td className="r num" style={{ fontWeight: 660, color: 'var(--danger)' }}>{n3(j.kg)}</td>
-                    <td className="r num">{n3(j.after)}</td>
-                    <td>{j.date}<div className="dim">{j.time}</div></td>
-                    <td><span className="badge b-ok">{j.status}</span></td>
+                  <tr key={j.no} className="hover">
+                    <td>
+                      <div className="num" style={{ fontWeight: 640 }}>{j.no}</div>
+                      <div className="tiny muted">{j.date} {j.time}</div>
+                    </td>
+                    <td><div className="num" style={{ color: 'var(--primary)' }}>{j.reel}</div></td>
+                    <td>
+                      <div className="num">{j.w}×{j.l}</div>
+                      <div className="tiny muted">{j.gsm} GSM</div>
+                    </td>
+                    <td><div className="num">{n0(j.sheets)}</div></td>
+                    <td><div className="num">{n3(j.kg)}<small>kg</small></div></td>
+                    <td><div className="num">{n3(j.waste || 0)}<small>kg</small></div></td>
+                    <td><div className="num" style={{ fontWeight: 600 }}>{n3(j.totalKg || j.kg)}<small>kg</small></div></td>
+                    <td>
+                      <span className={`badge ${j.status === 'Completed' ? 'b-ok' : 'b-warn'}`}>{j.status}</span>
+                    </td>
+                    {isAdmin && (
+                      <td>
+                        {j.status === 'Completed' && (
+                          <button className="btn btn-sm btn-ghost" onClick={() => handleReverse(j.id || j.no)} title="Reverse Job">
+                            <RotateCcw size={15} />
+                          </button>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
             </table>
-            <div className="tbl-foot">
-              <span>{filtered.length} jobs</span>
-              <span className="num">{n0(totalConsumedKg)} kg consumed</span>
-            </div>
           </div>
         ) : (
-          <div className="list-grid">
+          <div className="grid-2">
             {filtered.map((j) => (
-              <div key={j.no} className="card card-pad" onClick={() => navigate(`/reels/${j.reel}`)}>
+              <div key={j.no} className="item-card">
                 <div className="between">
                   <div>
-                    <div className="num" style={{ fontSize: '15px', fontWeight: 660 }}>{j.no}</div>
-                    <div className="tiny muted">Reel {j.reel} · {j.unit}</div>
+                    <div className="num" style={{ fontWeight: 660 }}>{j.no}</div>
+                    <div className="tiny muted">{j.date} {j.time}</div>
                   </div>
-                  <span className="badge b-ok">{j.status}</span>
+                  <span className={`badge ${j.status === 'Completed' ? 'b-ok' : 'b-warn'}`}>{j.status}</span>
+                </div>
+                <div className="divider" />
+                <div className="grid-2">
+                  <div>
+                    <div className="k">Reel used</div>
+                    <div className="v num" style={{ color: 'var(--primary)' }}>{j.reel}</div>
+                  </div>
+                  <div>
+                    <div className="k">Cut size</div>
+                    <div className="v num">{j.w}×{j.l} · {j.gsm} GSM</div>
+                  </div>
                 </div>
                 <div className="wt-row mt10">
-                  <div className="wt">
-                    <div className="k">Sheets</div>
-                    <div className="v num">{n0(j.sheets)}</div>
-                  </div>
-                  <div className="wt">
-                    <div className="k">Consumed</div>
-                    <div className="v num" style={{ color: 'var(--danger)' }}>{n3(j.kg)}<small>kg</small></div>
-                  </div>
+                  <div className="wt"><div className="k">Output</div><div className="v num">{n3(j.kg)}<small>kg</small></div></div>
+                  <div className="wt"><div className="k">Waste</div><div className="v num">{n3(j.waste || 0)}<small>kg</small></div></div>
+                  <div className="wt"><div className="k">Consumed</div><div className="v num" style={{ color: 'var(--danger)' }}>{n3(j.totalKg || j.kg)}<small>kg</small></div></div>
                 </div>
+                {isAdmin && j.status === 'Completed' && (
+                  <div className="mt10" style={{ borderTop: '1px solid var(--border)', paddingTop: '10px' }}>
+                    <button className="btn btn-sm btn-ghost btn-block" onClick={() => handleReverse(j.id || j.no)}>
+                      <RotateCcw size={15} /> Reverse Job
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

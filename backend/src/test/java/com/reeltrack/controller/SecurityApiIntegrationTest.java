@@ -33,7 +33,7 @@ class SecurityApiIntegrationTest {
                         .content("{\"username\":\"operator\",\"password\":\"password123\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").isNotEmpty())
-                .andExpect(jsonPath("$.role").value("OPERATOR"))
+                .andExpect(jsonPath("$.role").value("USER"))
                 .andExpect(jsonPath("$.unitId").value("U1"));
     }
 

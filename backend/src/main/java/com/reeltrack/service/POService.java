@@ -20,6 +20,8 @@ import com.reeltrack.repository.BusinessConfigRepository;
 import com.reeltrack.repository.PORepository;
 import com.reeltrack.repository.ReelRepository;
 import com.reeltrack.repository.SupplierRepository;
+import com.reeltrack.repository.UnitRepository;
+import com.reeltrack.model.Unit;
 
 @Service
 public class POService {
@@ -27,24 +29,84 @@ public class POService {
     private final PORepository poRepository;
     private final ReelRepository reelRepository;
     private final SupplierRepository supplierRepository;
+    private final UnitRepository unitRepository;
     private final ActivityLogRepository activityLogRepository;
     private final BusinessConfigRepository businessConfigRepository;
+    private final EmailService emailService;
+    private final NotificationService notificationService;
 
     public POService(PORepository poRepository, ReelRepository reelRepository,
-                     SupplierRepository supplierRepository, ActivityLogRepository activityLogRepository,
-                     BusinessConfigRepository businessConfigRepository) {
+                     SupplierRepository supplierRepository, UnitRepository unitRepository, ActivityLogRepository activityLogRepository,
+                     BusinessConfigRepository businessConfigRepository, EmailService emailService,
+                     NotificationService notificationService) {
         this.poRepository = poRepository;
         this.reelRepository = reelRepository;
         this.supplierRepository = supplierRepository;
+        this.unitRepository = unitRepository;
         this.activityLogRepository = activityLogRepository;
         this.businessConfigRepository = businessConfigRepository;
+        this.emailService = emailService;
+        this.notificationService = notificationService;
     }
 
     @Transactional
     public PurchaseOrder createPO(POCreateRequest req, String raisedBy) {
         validateCreateRequest(req);
+        
+        Supplier supplier = supplierRepository.findById(req.getSupplier())
+                .orElseThrow(() -> new RuntimeException("Supplier not found"));
+
+        Unit unit = unitRepository.findById(req.getUnit())
+                .orElseThrow(() -> new RuntimeException("Unit not found"));
+
         long count = poRepository.count();
         String poId = "PO-2026-" + String.format("%04d", 48 + count);
+
+        // Basic GST validation on Supplier
+        String gst = supplier.getGst();
+        if (gst == null || gst.length() < 2) {
+             throw new RuntimeException("Supplier GST is invalid or missing");
+        }
+        
+        String supplierStateCode = gst.substring(0, 2);
+        String unitStateCode = unit.getStateCode();
+        if (unitStateCode == null || unitStateCode.length() < 2) {
+            throw new RuntimeException("Unit state code is invalid or missing");
+        }
+
+        boolean isInterState = !supplierStateCode.equals(unitStateCode);
+        
+        // Let's assume GST rate is 18% (0.18).
+        double gstRate = 0.18;  
+        
+        // Calculate items total
+        double totalBase = 0.0;
+        if (req.getItems() != null) {
+            for (POItem item : req.getItems()) {
+                double itemTotal = (item.getKg() != null ? item.getKg() : 0.0) * (item.getRate() != null ? item.getRate() : 0.0);
+                double itemGstAmount = itemTotal * gstRate;
+                
+                if (isInterState) {
+                    item.setIgst(itemGstAmount);
+                    item.setCgst(0.0);
+                    item.setSgst(0.0);
+                } else {
+                    item.setIgst(0.0);
+                    item.setCgst(itemGstAmount / 2);
+                    item.setSgst(itemGstAmount / 2);
+                }
+                item.setTotalTax(itemGstAmount);
+                
+                totalBase += itemTotal;
+            }
+        }
+        
+        double gstAmount = totalBase * gstRate;
+        double totalWithGst = totalBase + gstAmount;
+
+        double totalCgst = isInterState ? 0.0 : gstAmount / 2;
+        double totalSgst = isInterState ? 0.0 : gstAmount / 2;
+        double totalIgst = isInterState ? gstAmount : 0.0;
 
         PurchaseOrder po = PurchaseOrder.builder()
                 .id(poId)
@@ -56,13 +118,19 @@ public class POService {
                 .status("Pending Approval")
                 .received(0)
                 .raisedBy(raisedBy != null ? raisedBy : "Admin (Head Office)")
+                .gstRate(gstRate)
+                .totalTax(gstAmount)
+                .totalWithGst(totalWithGst)
+                .cgst(totalCgst)
+                .sgst(totalSgst)
+                .igst(totalIgst)
+                .supplierState(supplierStateCode)
                 .items(req.getItems())
                 .build();
 
         PurchaseOrder saved = poRepository.save(po);
 
-        Supplier supplier = supplierRepository.findById(req.getSupplier()).orElse(null);
-        String supName = supplier != null ? supplier.getName() : req.getSupplier();
+        String supName = supplier.getName();
 
         activityLogRepository.save(ActivityLog.builder()
                 .icon("po")
@@ -71,6 +139,11 @@ public class POService {
                 .sub(supName)
                 .time("Just now")
                 .build());
+
+        emailService.sendEmail("supplier@example.com", "New Purchase Order: " + poId, 
+            "A new purchase order (" + poId + ") has been raised. Please review the details.");
+        
+        notificationService.createNotification("PO Created", "Purchase Order " + poId + " has been raised for " + supName, "ADMIN");
 
         return saved;
     }
@@ -90,6 +163,11 @@ public class POService {
                 .time("Just now")
                 .build());
 
+        emailService.sendEmail("supplier@example.com", "Purchase Order Approved: " + poId, 
+            "The purchase order " + poId + " has been approved and is now Open.");
+            
+        notificationService.createNotification("PO Approved", "Purchase Order " + poId + " has been approved.", "ALL");
+
         return saved;
     }
 
@@ -108,6 +186,9 @@ public class POService {
                 .sub(poId)
                 .time("Just now")
                 .build());
+
+        emailService.sendEmail("supplier@example.com", "Purchase Order Cancelled: " + poId, 
+            "The purchase order " + poId + " has been cancelled. Reason: " + reason);
 
         return saved;
     }
@@ -148,8 +229,13 @@ public class POService {
         Reel savedReel = reelRepository.save(reel);
 
         po.setReceived(po.getReceived() + 1);
+        boolean wasCompleted = "Completed".equals(po.getStatus());
         if (po.getReceived() >= totalReels) {
             po.setStatus("Completed");
+            if (!wasCompleted) {
+                emailService.sendEmail("supplier@example.com", "Purchase Order Completed: " + poId, 
+                    "All goods for purchase order " + poId + " have been received successfully.");
+            }
         } else {
             po.setStatus("Partially Received");
         }

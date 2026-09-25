@@ -31,10 +31,10 @@ class RepositoryPersistenceTest {
     @Test
     void persistsUserWithRoleAndUniqueUsername() {
         userRepository.save(User.builder().username("test-user").password("hash")
-                .name("Test User").role(Role.OPERATOR).unitId("U1").build());
+                .name("Test User").role(Role.USER).unitId("U1").build());
 
         User saved = userRepository.findByUsernameIgnoreCase("TEST-USER").orElseThrow();
-        assertEquals(Role.OPERATOR, saved.getRole());
+        assertEquals(Role.USER, saved.getRole());
         assertEquals("U1", saved.getUnitId());
     }
 }

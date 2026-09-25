@@ -50,11 +50,7 @@ public class SecurityConfig {
 
                 CorsConfiguration config = new CorsConfiguration();
 
-                config.setAllowedOrigins(List.of(
-                    "http://localhost:5173",
-                    "http://localhost:3000",
-                    "http://127.0.0.1:5173"
-                ));
+                config.setAllowedOriginPatterns(List.of("*","http://localhost:5174"));
 
                 config.setAllowedMethods(List.of(
                     "GET",
@@ -90,25 +86,18 @@ public class SecurityConfig {
     // Public - Authentication
             .requestMatchers("/api/auth/**").permitAll()
 
-              // Public reads for master dropdowns, units, mills, reel types, config for all authenticated users
-              .requestMatchers(HttpMethod.GET, "/api/units", "/api/mills", "/api/reel-types", "/api/config", "/api/suppliers").authenticated()
+              // Reads for all authenticated users (User read-all)
+              .requestMatchers(HttpMethod.GET, "/api/**").authenticated()
 
-              // Admin-only master writes & config updates
-              .requestMatchers(HttpMethod.POST, "/api/units/**", "/api/mills/**", "/api/reel-types/**").hasRole("ADMIN")
-              .requestMatchers(HttpMethod.PUT, "/api/units/**", "/api/mills/**", "/api/reel-types/**", "/api/config/**").hasRole("ADMIN")
-              .requestMatchers(HttpMethod.PATCH, "/api/units/**", "/api/mills/**", "/api/reel-types/**").hasRole("ADMIN")
-              .requestMatchers(HttpMethod.DELETE, "/api/units/**", "/api/mills/**", "/api/reel-types/**").hasRole("ADMIN")
+              // Users can only create cutting jobs and weight adjustments
+              .requestMatchers(HttpMethod.POST, "/api/jobs/**").hasAnyRole("ADMIN", "USER")
+              .requestMatchers(HttpMethod.POST, "/api/reels/*/adjust-weight").hasAnyRole("ADMIN", "USER")
 
-              // Admin only user management and sensitive ops
-              .requestMatchers(
-                 "/api/users/**",
-                 "/api/admin/**",
-                 "/api/pos",
-                 "/api/pos/*/approve",
-                 "/api/pos/*/cancel",
-                 "/api/pos/*/receive",
-                 "/api/transfers"
-              ).hasRole("ADMIN")
+              // All other modifications (POST, PUT, PATCH, DELETE) require ADMIN
+              .requestMatchers(HttpMethod.POST, "/api/**").hasRole("ADMIN")
+              .requestMatchers(HttpMethod.PUT, "/api/**").hasRole("ADMIN")
+              .requestMatchers(HttpMethod.PATCH, "/api/**").hasRole("ADMIN")
+              .requestMatchers(HttpMethod.DELETE, "/api/**").hasRole("ADMIN")
 
               // Everything else requires login
               .anyRequest().authenticated()

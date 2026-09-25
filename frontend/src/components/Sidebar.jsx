@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard,
   Disc,
+  Plus,
   Scissors,
   FileText,
   Factory,
@@ -15,6 +16,7 @@ import {
   Layers,
   Users,
   Settings,
+  Shield,
 } from 'lucide-react';
 
 const NAV = [
@@ -42,6 +44,7 @@ const NAV = [
         label: 'Reel Inventory',
         icon: Disc,
       },
+
       {
         path: '/jobs',
         label: 'Cutting Jobs',
@@ -56,6 +59,11 @@ const NAV = [
         path: '/transfers',
         label: 'Transfers',
         icon: ArrowRightLeft,
+      },
+      {
+        path: '/stock-counts',
+        label: 'Stock Counts',
+        icon: FileText,
       },
     ],
   },
@@ -101,6 +109,12 @@ const NAV = [
         adminOnly: true,
       },
       {
+        path: '/audit',
+        label: 'Audit Log',
+        icon: Shield,
+        adminOnly: true,
+      },
+      {
         path: '/settings',
         label: 'Settings',
         icon: Settings,
@@ -118,13 +132,19 @@ export default function Sidebar({ isOpen, onClose }) {
   return (
     <>
       <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
-        
+
+        {/* =================================================
+            BRAND
+        ================================================= */}
+
         <div className="sb-brand">
+
           <div className="brand-mark">
             <Disc size={18} />
           </div>
 
           <div>
+
             <div className="brand-name">
               ReelTrack
             </div>
@@ -132,18 +152,29 @@ export default function Sidebar({ isOpen, onClose }) {
             <div className="brand-sub">
               Reel inventory &amp; POs
             </div>
+
           </div>
+
         </div>
 
+
+        {/* =================================================
+            NAVIGATION
+        ================================================= */}
+
         <nav className="sb-nav">
+
           {NAV.map((group, index) => {
 
-            const visibleItems = group.items.filter(
-              (item) =>
-                isAdmin || !item.adminOnly
-            );
+            const visibleItems =
+              group.items.filter(
+                (item) =>
+                  isAdmin || !item.adminOnly
+              );
 
-            if (!visibleItems.length) return null;
+            if (!visibleItems.length) {
+              return null;
+            }
 
             return (
               <div key={index}>
@@ -160,6 +191,7 @@ export default function Sidebar({ isOpen, onClose }) {
                     <NavLink
                       key={item.path}
                       to={item.path}
+                      end={item.path === '/reels'}
                       onClick={onClose}
                       className={({ isActive }) =>
                         `nav-item ${
@@ -167,6 +199,7 @@ export default function Sidebar({ isOpen, onClose }) {
                         }`
                       }
                     >
+
                       <span className="ni-ico">
                         <Icon size={17} />
                       </span>
@@ -174,6 +207,7 @@ export default function Sidebar({ isOpen, onClose }) {
                       <span>
                         {item.label}
                       </span>
+
                     </NavLink>
                   );
                 })}
@@ -181,7 +215,13 @@ export default function Sidebar({ isOpen, onClose }) {
               </div>
             );
           })}
+
         </nav>
+
+
+        {/* =================================================
+            USER FOOTER
+        ================================================= */}
 
         <div className="sb-foot">
 
@@ -225,6 +265,11 @@ export default function Sidebar({ isOpen, onClose }) {
         </div>
 
       </aside>
+
+
+      {/* ===================================================
+          MOBILE SCRIM
+      =================================================== */}
 
       <div
         className={`sb-scrim ${

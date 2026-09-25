@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.reeltrack.dto.DTOs.*;
@@ -57,5 +58,11 @@ public class JobController {
     public ResponseEntity<List<CuttingJob>> executeSplitJob(@RequestBody JobCalcRequest request, Authentication authentication) {
         String operator = authentication != null ? authentication.getName() : "Operator";
         return ResponseEntity.ok(jobService.executeSplitJob(request, operator));
+    }
+
+    @PostMapping("/{id}/reverse")
+    public ResponseEntity<CuttingJob> reverseJob(@PathVariable String id, Authentication authentication) {
+        String operator = authentication != null ? authentication.getName() : "Operator";
+        return ResponseEntity.ok(jobService.reverseJob(id, operator));
     }
 }

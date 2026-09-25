@@ -19,15 +19,19 @@ public class CuttingJob {
     private Double f;
     private Double effGsm;
     private Double kg;
+    private Double waste;
+    private Double totalKg;
     private Double after;
     private String date;
     private String time;
     private String status;
     private String op;
+    private Boolean reversed;
+    private String reversedBy;
 
     public CuttingJob() {}
 
-    public CuttingJob(String no, String reel, String unit, Integer w, Integer l, Integer gsm, Integer sheets, Boolean corr, Double f, Double effGsm, Double kg, Double after, String date, String time, String status, String op) {
+    public CuttingJob(String no, String reel, String unit, Integer w, Integer l, Integer gsm, Integer sheets, Boolean corr, Double f, Double effGsm, Double kg, Double waste, Double totalKg, Double after, String date, String time, String status, String op, Boolean reversed, String reversedBy) {
         this.no = no;
         this.reel = reel;
         this.unit = unit;
@@ -39,11 +43,15 @@ public class CuttingJob {
         this.f = f;
         this.effGsm = effGsm;
         this.kg = kg;
+        this.waste = waste;
+        this.totalKg = totalKg;
         this.after = after;
         this.date = date;
         this.time = time;
         this.status = status;
         this.op = op;
+        this.reversed = reversed;
+        this.reversedBy = reversedBy;
     }
 
     public String getNo() { return no; }
@@ -79,6 +87,12 @@ public class CuttingJob {
     public Double getKg() { return kg; }
     public void setKg(Double kg) { this.kg = kg; }
 
+    public Double getWaste() { return waste; }
+    public void setWaste(Double waste) { this.waste = waste; }
+
+    public Double getTotalKg() { return totalKg; }
+    public void setTotalKg(Double totalKg) { this.totalKg = totalKg; }
+
     public Double getAfter() { return after; }
     public void setAfter(Double after) { this.after = after; }
 
@@ -94,25 +108,19 @@ public class CuttingJob {
     public String getOp() { return op; }
     public void setOp(String op) { this.op = op; }
 
+    public Boolean getReversed() { return reversed; }
+    public void setReversed(Boolean reversed) { this.reversed = reversed; }
+
+    public String getReversedBy() { return reversedBy; }
+    public void setReversedBy(String reversedBy) { this.reversedBy = reversedBy; }
+
     public static CuttingJobBuilder builder() { return new CuttingJobBuilder(); }
 
     public static class CuttingJobBuilder {
-        private String no;
-        private String reel;
-        private String unit;
-        private Integer w;
-        private Integer l;
-        private Integer gsm;
-        private Integer sheets;
-        private Boolean corr;
-        private Double f;
-        private Double effGsm;
-        private Double kg;
-        private Double after;
-        private String date;
-        private String time;
-        private String status;
-        private String op;
+        private String no, reel, unit, date, time, status, op, reversedBy;
+        private Integer w, l, gsm, sheets;
+        private Boolean corr, reversed;
+        private Double f, effGsm, kg, waste, totalKg, after;
 
         public CuttingJobBuilder no(String no) { this.no = no; return this; }
         public CuttingJobBuilder reel(String reel) { this.reel = reel; return this; }
@@ -125,14 +133,17 @@ public class CuttingJob {
         public CuttingJobBuilder f(Double f) { this.f = f; return this; }
         public CuttingJobBuilder effGsm(Double effGsm) { this.effGsm = effGsm; return this; }
         public CuttingJobBuilder kg(Double kg) { this.kg = kg; return this; }
+        public CuttingJobBuilder waste(Double waste) { this.waste = waste; return this; }
+        public CuttingJobBuilder totalKg(Double totalKg) { this.totalKg = totalKg; return this; }
         public CuttingJobBuilder after(Double after) { this.after = after; return this; }
         public CuttingJobBuilder date(String date) { this.date = date; return this; }
         public CuttingJobBuilder time(String time) { this.time = time; return this; }
         public CuttingJobBuilder status(String status) { this.status = status; return this; }
         public CuttingJobBuilder op(String op) { this.op = op; return this; }
-
+        public CuttingJobBuilder reversed(Boolean reversed) { this.reversed = reversed; return this; }
+        public CuttingJobBuilder reversedBy(String reversedBy) { this.reversedBy = reversedBy; return this; }
         public CuttingJob build() {
-            return new CuttingJob(no, reel, unit, w, l, gsm, sheets, corr, f, effGsm, kg, after, date, time, status, op);
+            return new CuttingJob(no, reel, unit, w, l, gsm, sheets, corr, f, effGsm, kg, waste, totalKg, after, date, time, status, op, reversed, reversedBy);
         }
     }
 }

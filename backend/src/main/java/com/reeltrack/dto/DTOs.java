@@ -64,9 +64,10 @@ public class DTOs {
         private Integer sheets;
         private Boolean corr;
         private Double f;
+        private Double waste;
 
         public JobCalcRequest() {}
-        public JobCalcRequest(String reelId, Integer w, Integer l, Integer gsm, Integer sheets, Boolean corr, Double f) {
+        public JobCalcRequest(String reelId, Integer w, Integer l, Integer gsm, Integer sheets, Boolean corr, Double f, Double waste) {
             this.reelId = reelId;
             this.w = w;
             this.l = l;
@@ -74,6 +75,7 @@ public class DTOs {
             this.sheets = sheets;
             this.corr = corr;
             this.f = f;
+            this.waste = waste;
         }
 
         public String getReelId() { return reelId; }
@@ -90,10 +92,12 @@ public class DTOs {
         public void setCorr(Boolean corr) { this.corr = corr; }
         public Double getF() { return f; }
         public void setF(Double f) { this.f = f; }
+        public Double getWaste() { return waste; }
+        public void setWaste(Double waste) { this.waste = waste; }
 
         public static JobCalcRequestBuilder builder() { return new JobCalcRequestBuilder(); }
         public static class JobCalcRequestBuilder {
-            private String reelId; private Integer w, l, gsm, sheets; private Boolean corr; private Double f;
+            private String reelId; private Integer w, l, gsm, sheets; private Boolean corr; private Double f; private Double waste;
             public JobCalcRequestBuilder reelId(String reelId) { this.reelId = reelId; return this; }
             public JobCalcRequestBuilder w(Integer w) { this.w = w; return this; }
             public JobCalcRequestBuilder l(Integer l) { this.l = l; return this; }
@@ -101,49 +105,82 @@ public class DTOs {
             public JobCalcRequestBuilder sheets(Integer sheets) { this.sheets = sheets; return this; }
             public JobCalcRequestBuilder corr(Boolean corr) { this.corr = corr; return this; }
             public JobCalcRequestBuilder f(Double f) { this.f = f; return this; }
-            public JobCalcRequest build() { return new JobCalcRequest(reelId, w, l, gsm, sheets, corr, f); }
+            public JobCalcRequestBuilder waste(Double waste) { this.waste = waste; return this; }
+            public JobCalcRequest build() { return new JobCalcRequest(reelId, w, l, gsm, sheets, corr, f, waste); }
         }
     }
 
     public static class JobCalcResponse {
         private Double effGsm;
         private Double kg;
+        private Double waste;
+        private Double totalKg;
         private Double prevBalance;
         private Double afterBalance;
         private Double shortKg;
         private Boolean isWidthOk;
         private Boolean isOk;
+        private Integer maxSheets;
+        private String errorCode;
 
         public JobCalcResponse() {}
-        public JobCalcResponse(Double effGsm, Double kg, Double prevBalance, Double afterBalance, Double shortKg, Boolean isWidthOk, Boolean isOk) {
+        public JobCalcResponse(Double effGsm, Double kg, Double waste, Double totalKg, Double prevBalance, Double afterBalance, Double shortKg, Boolean isWidthOk, Boolean isOk, Integer maxSheets, String errorCode) {
             this.effGsm = effGsm;
             this.kg = kg;
+            this.waste = waste;
+            this.totalKg = totalKg;
             this.prevBalance = prevBalance;
             this.afterBalance = afterBalance;
             this.shortKg = shortKg;
             this.isWidthOk = isWidthOk;
             this.isOk = isOk;
+            this.maxSheets = maxSheets;
+            this.errorCode = errorCode;
         }
 
         public Double getEffGsm() { return effGsm; }
+        public void setEffGsm(Double effGsm) { this.effGsm = effGsm; }
         public Double getKg() { return kg; }
+        public void setKg(Double kg) { this.kg = kg; }
+        public Double getWaste() { return waste; }
+        public void setWaste(Double waste) { this.waste = waste; }
+        public Double getTotalKg() { return totalKg; }
+        public void setTotalKg(Double totalKg) { this.totalKg = totalKg; }
         public Double getPrevBalance() { return prevBalance; }
+        public void setPrevBalance(Double prevBalance) { this.prevBalance = prevBalance; }
         public Double getAfterBalance() { return afterBalance; }
+        public void setAfterBalance(Double afterBalance) { this.afterBalance = afterBalance; }
         public Double getShortKg() { return shortKg; }
+        public void setShortKg(Double shortKg) { this.shortKg = shortKg; }
         public Boolean getIsWidthOk() { return isWidthOk; }
+        public void setIsWidthOk(Boolean isWidthOk) { this.isWidthOk = isWidthOk; }
         public Boolean getIsOk() { return isOk; }
+        public void setIsOk(Boolean isOk) { this.isOk = isOk; }
+        public Integer getMaxSheets() { return maxSheets; }
+        public void setMaxSheets(Integer maxSheets) { this.maxSheets = maxSheets; }
+        public String getErrorCode() { return errorCode; }
+        public void setErrorCode(String errorCode) { this.errorCode = errorCode; }
 
         public static JobCalcResponseBuilder builder() { return new JobCalcResponseBuilder(); }
         public static class JobCalcResponseBuilder {
-            private Double effGsm, kg, prevBalance, afterBalance, shortKg; private Boolean isWidthOk, isOk;
+            private Double effGsm, kg, waste, totalKg, prevBalance, afterBalance, shortKg;
+            private Boolean isWidthOk, isOk;
+            private Integer maxSheets;
+            private String errorCode;
             public JobCalcResponseBuilder effGsm(Double effGsm) { this.effGsm = effGsm; return this; }
             public JobCalcResponseBuilder kg(Double kg) { this.kg = kg; return this; }
+            public JobCalcResponseBuilder waste(Double waste) { this.waste = waste; return this; }
+            public JobCalcResponseBuilder totalKg(Double totalKg) { this.totalKg = totalKg; return this; }
             public JobCalcResponseBuilder prevBalance(Double prevBalance) { this.prevBalance = prevBalance; return this; }
             public JobCalcResponseBuilder afterBalance(Double afterBalance) { this.afterBalance = afterBalance; return this; }
             public JobCalcResponseBuilder shortKg(Double shortKg) { this.shortKg = shortKg; return this; }
             public JobCalcResponseBuilder isWidthOk(Boolean isWidthOk) { this.isWidthOk = isWidthOk; return this; }
             public JobCalcResponseBuilder isOk(Boolean isOk) { this.isOk = isOk; return this; }
-            public JobCalcResponse build() { return new JobCalcResponse(effGsm, kg, prevBalance, afterBalance, shortKg, isWidthOk, isOk); }
+            public JobCalcResponseBuilder maxSheets(Integer maxSheets) { this.maxSheets = maxSheets; return this; }
+            public JobCalcResponseBuilder errorCode(String errorCode) { this.errorCode = errorCode; return this; }
+            public JobCalcResponse build() {
+                return new JobCalcResponse(effGsm, kg, waste, totalKg, prevBalance, afterBalance, shortKg, isWidthOk, isOk, maxSheets, errorCode);
+            }
         }
     }
 

@@ -37,4 +37,17 @@ public class TransferController {
         String byUser = authentication != null ? authentication.getName() : "Admin";
         return ResponseEntity.ok(transferService.executeTransfer(request, byUser));
     }
+
+    @PostMapping("/{id}/receive")
+    public ResponseEntity<Transfer> receiveTransfer(@PathVariable Long id, Authentication authentication) {
+        String byUser = authentication != null ? authentication.getName() : "Admin";
+        return ResponseEntity.ok(transferService.receiveTransfer(id, byUser));
+    }
+
+    @PostMapping("/{id}/reject")
+    public ResponseEntity<Transfer> rejectTransfer(@PathVariable Long id, @RequestBody java.util.Map<String, String> payload, Authentication authentication) {
+        String byUser = authentication != null ? authentication.getName() : "Admin";
+        String notes = payload != null ? payload.getOrDefault("notes", "Rejected") : "Rejected";
+        return ResponseEntity.ok(transferService.rejectTransfer(id, byUser, notes));
+    }
 }

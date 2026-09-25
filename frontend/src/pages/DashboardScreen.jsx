@@ -37,7 +37,7 @@ export default function DashboardScreen() {
           <div>
             <h1 className="page-title">Dashboard</h1>
             <p className="page-sub">
-              {isAdmin ? 'Manufacturing overview · All units · August 2026' : `${user?.unitId || 'U1'} Unit · Operator view`}
+              {isAdmin ? 'Manufacturing overview · All units · August 2026' : `${user?.unitId || 'U1'} Unit · User view`}
             </p>
           </div>
           <div className="btn-row">

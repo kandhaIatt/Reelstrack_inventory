@@ -21,6 +21,7 @@ public class User {
     private String username;
 
     @Column(nullable = false)
+    @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY)
     private String password;
 
     @Column(nullable = false)
@@ -159,6 +160,7 @@ public class User {
         private String unitId;
         private String email;
         private String mobile;
+        private boolean active = true;
 
         public UserBuilder username(String username) { this.username = username; return this; }
         public UserBuilder password(String password) { this.password = password; return this; }
@@ -167,6 +169,7 @@ public class User {
         public UserBuilder unitId(String unitId) { this.unitId = unitId; return this; }
         public UserBuilder email(String email) { this.email = email; return this; }
         public UserBuilder mobile(String mobile) { this.mobile = mobile; return this; }
+        public UserBuilder active(boolean active) { this.active = active; return this; }
 
         public User build() {
             User user = new User();
@@ -177,6 +180,7 @@ public class User {
             user.setUnitId(unitId);
             user.setEmail(email);
             user.setMobile(mobile);
+            user.setActive(active);
             return user;
         }
     }

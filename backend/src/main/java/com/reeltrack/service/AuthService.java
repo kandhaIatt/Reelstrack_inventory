@@ -2,12 +2,15 @@ package com.reeltrack.service;
 
 import java.time.LocalDateTime;
 
+import java.util.UUID;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.reeltrack.model.User;
+import com.reeltrack.model.PasswordResetToken;
 import com.reeltrack.repository.UserRepository;
+import com.reeltrack.repository.PasswordResetTokenRepository;
 import com.reeltrack.security.JwtUtil;
 
 @Service
@@ -16,6 +19,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     private static final int MAX_FAILED_ATTEMPTS = 5;
 
@@ -25,11 +29,13 @@ public class AuthService {
     public AuthService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
-            JwtUtil jwtUtil) {
+            JwtUtil jwtUtil,
+            PasswordResetTokenRepository passwordResetTokenRepository) {
 
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        this.passwordResetTokenRepository = passwordResetTokenRepository;
     }
 
     public LoginResult login(
@@ -163,9 +169,63 @@ public class AuthService {
     }
 
     public User getCurrentUser(String username) {
-    return userRepository.findByUsernameIgnoreCase(username)
-            .orElseThrow(() ->
-                    new UsernameNotFoundException("User not found"));
+        return userRepository.findByUsernameIgnoreCase(username)
+                .orElseThrow(() ->
+                        new UsernameNotFoundException("User not found"));
+    }
+
+    public void changePassword(String username, String currentPassword, String newPassword) {
+        User user = getCurrentUser(username);
+
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new IllegalArgumentException("Current password is incorrect");
+        }
+
+        if (newPassword == null || newPassword.length() < 8) {
+            throw new IllegalArgumentException("New password must be at least 8 characters");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setPasswordChangeRequired(false);
+        userRepository.save(user);
+    }
+
+    public String generateResetToken(String emailOrUsername) {
+        User user = findUser(emailOrUsername);
+        if (user == null) {
+            return null; // Return null if not found
+        }
+        
+        String token = UUID.randomUUID().toString();
+        PasswordResetToken prt = new PasswordResetToken();
+        prt.setToken(token);
+        prt.setUserId(user.getId());
+        prt.setExpiryDate(LocalDateTime.now().plusHours(1)); // 1 hour expiry
+        prt.setUsed(false);
+        passwordResetTokenRepository.save(prt);
+        
+        return token;
+    }
+
+    public boolean resetPassword(String token, String newPassword) {
+        PasswordResetToken prt = passwordResetTokenRepository.findByTokenAndUsedFalse(token)
+                .orElse(null);
+                
+        if (prt == null || prt.getExpiryDate().isBefore(LocalDateTime.now())) {
+            return false;
+        }
+
+        User user = userRepository.findById(prt.getUserId()).orElse(null);
+        if (user == null) return false;
+        
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setPasswordChangeRequired(false);
+        userRepository.save(user);
+
+        prt.setUsed(true);
+        passwordResetTokenRepository.save(prt);
+        
+        return true;
     }
     // =============================
     // Login Result

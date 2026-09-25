@@ -48,6 +48,10 @@ if (res.data.forcePasswordChange) {
   navigate("/change-password", {
     replace: true,
   });
+} else {
+  navigate("/dashboard", {
+    replace: true,
+  });
 }
   };
 

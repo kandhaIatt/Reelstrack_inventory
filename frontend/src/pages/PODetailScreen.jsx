@@ -26,8 +26,8 @@ export default function PODetailScreen() {
   const inr = (v) => '₹' + Math.round(Number(v || 0)).toLocaleString('en-IN');
 
   const sub = po.items ? po.items.reduce((s, i) => s + i.kg * i.rate, 0) : 0;
-  const tax = sub * 0.18;
-  const total = sub + tax;
+  const tax = po.gstAmount || (sub * 0.18);
+  const total = po.totalWithGst || (sub + tax);
   const totalReels = po.items ? po.items.reduce((s, i) => s + i.qty, 0) : 0;
   const totalKg = po.items ? po.items.reduce((s, i) => s + i.kg, 0) : 0;
 
@@ -112,12 +112,49 @@ export default function PODetailScreen() {
       </div>
 
       <div className="mt14">
-        {po.status === 'Pending Approval' && (
+        {po.status === 'DRAFT' && (
+          <button className="btn btn-primary btn-block" onClick={async () => {
+            try {
+              await posApi.updateStatus(po.id, 'PENDING_APPROVAL');
+              setPo({ ...po, status: 'Pending Approval' });
+              showToast('Submitted', 'PO submitted for approval');
+            } catch (err) {}
+          }}>
+            <Check size={18} /> Submit for Approval
+          </button>
+        )}
+        {(po.status === 'Pending Approval' || po.status === 'PENDING_APPROVAL') && isAdmin && (
           <div>
             <button className="btn btn-primary btn-block" onClick={handleApprove}>
               <Check size={18} /> Approve PO
             </button>
-            <button className="btn btn-danger btn-block mt10" onClick={handleCancel}>
+            <div className="grid-2 mt10">
+              <button className="btn btn-danger" onClick={async () => {
+                const reason = prompt('Rejection Reason:');
+                if (reason) {
+                  try {
+                    await posApi.updateStatus(po.id, 'REJECTED');
+                    setPo({ ...po, status: 'REJECTED' });
+                    showToast('Rejected', 'PO has been rejected');
+                  } catch (e) {}
+                }
+              }}>
+                <X size={18} /> Reject
+              </button>
+              <button className="btn btn-outline" onClick={async () => {
+                const reason = prompt('Amendment requested:');
+                if (reason) {
+                  try {
+                    await posApi.updateStatus(po.id, 'DRAFT');
+                    setPo({ ...po, status: 'DRAFT' });
+                    showToast('Amended', 'PO sent back to draft');
+                  } catch (e) {}
+                }
+              }}>
+                Amend
+              </button>
+            </div>
+            <button className="btn btn-ghost btn-block mt10" style={{ color: 'var(--danger)' }} onClick={handleCancel}>
               <X size={18} /> Cancel PO
             </button>
           </div>

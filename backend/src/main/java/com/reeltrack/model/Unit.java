@@ -3,6 +3,8 @@ package com.reeltrack.model;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "units")
@@ -13,6 +15,8 @@ public class Unit {
     private String name;
     private String code;
     private String city;
+    @Size(min = 2, max = 2)
+    @Pattern(regexp = "^[A-Za-z0-9]{2}$", message = "State code must be 2 alphanumeric characters")
     private String stateCode;
     private String incharge;
     private Integer targetReels;

@@ -21,6 +21,8 @@ import com.reeltrack.repository.CuttingJobRepository;
 import com.reeltrack.repository.ReelRepository;
 import com.reeltrack.repository.UserRepository;
 
+import com.reeltrack.repository.LedgerEntryRepository;
+
 @ExtendWith(MockitoExtension.class)
 class JobServiceTest {
 
@@ -28,12 +30,14 @@ class JobServiceTest {
     @Mock CuttingJobRepository jobRepository;
     @Mock ActivityLogRepository activityLogRepository;
     @Mock UserRepository userRepository;
+    @Mock LedgerEntryRepository ledgerEntryRepository;
+    @Mock NotificationService notificationService;
 
     private JobService service;
 
     @BeforeEach
     void setUp() {
-        service = new JobService(reelRepository, jobRepository, activityLogRepository, userRepository);
+        service = new JobService(reelRepository, jobRepository, activityLogRepository, userRepository, ledgerEntryRepository, notificationService);
     }
 
     @Test
@@ -79,7 +83,7 @@ class JobServiceTest {
         when(reelRepository.findById("R-1")).thenReturn(Optional.of(reel));
         when(userRepository.findByUsernameIgnoreCase("operator"))
                 .thenReturn(Optional.of(com.reeltrack.model.User.builder().username("operator")
-                        .role(com.reeltrack.model.Role.OPERATOR).unitId("U1").build()));
+                        .role(com.reeltrack.model.Role.USER).unitId("U1").build()));
 
         JobCalcRequest request = JobCalcRequest.builder().reelId("R-1")
                 .w(80).l(63).gsm(120).sheets(1000).corr(false).build();

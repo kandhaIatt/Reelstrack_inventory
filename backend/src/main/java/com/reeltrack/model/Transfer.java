@@ -21,9 +21,11 @@ public class Transfer {
     @Column(length = 500)
     private String notes;
 
+    private String status;
+
     public Transfer() {}
 
-    public Transfer(Long id, String ref, String reel, String fromUnit, String toUnit, Double kg, String date, String byUser, String notes) {
+    public Transfer(Long id, String ref, String reel, String fromUnit, String toUnit, Double kg, String date, String byUser, String notes, String status) {
         this.id = id;
         this.ref = ref;
         this.reel = reel;
@@ -33,6 +35,7 @@ public class Transfer {
         this.date = date;
         this.byUser = byUser;
         this.notes = notes;
+        this.status = status;
     }
 
     public Long getId() { return id; }
@@ -62,6 +65,9 @@ public class Transfer {
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
 
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
     public static TransferBuilder builder() { return new TransferBuilder(); }
 
     public static class TransferBuilder {
@@ -74,6 +80,7 @@ public class Transfer {
         private String date;
         private String byUser;
         private String notes;
+        private String status;
 
         public TransferBuilder id(Long id) { this.id = id; return this; }
         public TransferBuilder ref(String ref) { this.ref = ref; return this; }
@@ -84,9 +91,10 @@ public class Transfer {
         public TransferBuilder date(String date) { this.date = date; return this; }
         public TransferBuilder byUser(String byUser) { this.byUser = byUser; return this; }
         public TransferBuilder notes(String notes) { this.notes = notes; return this; }
+        public TransferBuilder status(String status) { this.status = status; return this; }
 
         public Transfer build() {
-            return new Transfer(id, ref, reel, fromUnit, toUnit, kg, date, byUser, notes);
+            return new Transfer(id, ref, reel, fromUnit, toUnit, kg, date, byUser, notes, status);
         }
     }
 }

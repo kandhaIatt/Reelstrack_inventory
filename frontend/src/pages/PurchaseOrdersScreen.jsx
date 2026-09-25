@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { posApi } from '../api/services';
 import { Search, Plus, BarChart3, ChevronRight, FileText } from 'lucide-react';
 
@@ -7,8 +7,25 @@ export default function PurchaseOrdersScreen() {
   const navigate = useNavigate();
   const [pos, setPos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const search = searchParams.get('q') || '';
+  const statusFilter = searchParams.get('status') || '';
+
+  const setSearch = (q) => {
+    setSearchParams(prev => {
+      if (q) prev.set('q', q);
+      else prev.delete('q');
+      return prev;
+    }, { replace: true });
+  };
+
+  const setStatusFilter = (status) => {
+    setSearchParams(prev => {
+      if (status) prev.set('status', status);
+      else prev.delete('status');
+      return prev;
+    }, { replace: true });
+  };
 
   useEffect(() => {
     posApi.getAll()
@@ -30,7 +47,7 @@ export default function PurchaseOrdersScreen() {
     const sub = p.items ? p.items.reduce((s, i) => s + i.kg * i.rate, 0) : 0;
     const reels = p.items ? p.items.reduce((s, i) => s + i.qty, 0) : 0;
     const kg = p.items ? p.items.reduce((s, i) => s + i.kg, 0) : 0;
-    return { sub, total: sub * 1.18, reels, kg };
+    return { sub, total: p.totalWithGst || (sub * 1.18), reels, kg };
   };
 
   return (

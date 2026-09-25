@@ -7,12 +7,15 @@ import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
 import SheetModal from './components/SheetModal';
 import ToastHost from './components/ToastHost';
+import OfflineBanner from './components/OfflineBanner';
 
 import LoginScreen from './pages/LoginScreen';
 import DashboardScreen from './pages/DashboardScreen';
 import ReelsScreen from './pages/ReelsScreen';
 import ReelDetailScreen from './pages/ReelDetailScreen';
 import NewJobScreen from './pages/NewJobScreen';
+import AddReelScreen from './pages/AddReelScreen';
+import BulkAddReelsScreen from './pages/BulkAddReelsScreen';
 import JobsScreen from './pages/JobsScreen';
 import PurchaseOrdersScreen from './pages/PurchaseOrdersScreen';
 import PODetailScreen from './pages/PODetailScreen';
@@ -24,6 +27,8 @@ import UnitsScreen from './pages/UnitsScreen';
 import UnitDetailScreen from './pages/UnitDetailScreen';
 import ReportsScreen from './pages/ReportsScreen';
 import POReportsScreen from './pages/POReportsScreen';
+import StockCountsScreen from './pages/StockCountsScreen';
+import ImportReelsScreen from './pages/ImportReelsScreen';
 
 import ChangePasswordScreen from './pages/ChangePasswordScreen';
 import ForgotPasswordScreen from './pages/ForgotPasswordScreen';
@@ -32,9 +37,12 @@ import {
   SuppliersScreen,
   MillsScreen,
   ReelTypesScreen,
-  UsersScreen,
   SettingsScreen,
+  UnitsMasterScreen
 } from './pages/MastersScreens';
+
+import UsersScreen from './pages/UsersScreen';
+import AuditLogScreen from './pages/AuditLogScreen';
 
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -70,11 +78,13 @@ function AuthenticatedLayout() {
   }
 
   return (
-    <div className="app">
-      <Sidebar
-        isOpen={navOpen}
-        onClose={() => setNavOpen(false)}
-      />
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
+      <OfflineBanner />
+      <div className="app" style={{ flex: 1, minHeight: 0 }}>
+        <Sidebar
+          isOpen={navOpen}
+          onClose={() => setNavOpen(false)}
+        />
 
       <div className="main">
         <Topbar
@@ -118,6 +128,8 @@ function AuthenticatedLayout() {
               element={<PurchaseOrdersScreen />}
             />
 
+            <Route path="/forgot-password" element={<ForgotPasswordScreen />} />
+
             <Route
               path="/pos/:id"
               element={<PODetailScreen />}
@@ -159,10 +171,52 @@ function AuthenticatedLayout() {
               }
             />
 
-            {/* Units - Everyone can view */}
+            {/* Stock Counts - Everyone can view/initiate */}
+            <Route
+              path="/stock-counts"
+              element={<StockCountsScreen />}
+            />
+
+            {/* Import Reels - Admin only */}
+            <Route
+              path="/reels/import"
+              element={
+                <ProtectedRoute allowedRoles={["ADMIN"]}>
+                  <ImportReelsScreen />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/reels/add"
+              element={
+                <ProtectedRoute allowedRoles={["ADMIN"]}>
+                  <AddReelScreen />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/reels/bulk-add"
+              element={
+                <ProtectedRoute allowedRoles={["ADMIN"]}>
+                  <BulkAddReelsScreen />
+                </ProtectedRoute>
+              }
+            />
+
             <Route
               path="/units"
               element={<UnitsScreen />}
+            />
+
+            <Route
+              path="/units/manage"
+              element={
+                <ProtectedRoute allowedRoles={["ADMIN"]}>
+                  <UnitsMasterScreen />
+                </ProtectedRoute>
+              }
             />
 
             <Route
@@ -236,6 +290,7 @@ function AuthenticatedLayout() {
 
       <SheetModal />
       <ToastHost />
+      </div>
     </div>
   );
 }

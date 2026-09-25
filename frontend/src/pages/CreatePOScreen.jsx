@@ -38,15 +38,15 @@ export default function CreatePOScreen() {
     setShowItemForm(false);
   };
 
-  const handleCreate = async () => {
+  const handleCreate = async (status = 'PENDING_APPROVAL') => {
     if (!items.length) {
       showToast('No items added', 'Add at least one line item', true);
       return;
     }
     try {
-      const payload = { supplier, unit, eta, terms, items };
+      const payload = { supplier, unit, eta, terms, items, status };
       const res = await posApi.create(payload);
-      showToast(`${res.data.id} created`, 'Sent for approval');
+      showToast(`${res.data.id} saved`, status === 'DRAFT' ? 'Saved as draft' : 'Sent for approval');
       navigate(`/pos/${res.data.id}`);
     } catch (err) {
       showToast('PO creation failed', 'Error saving order', true);
@@ -56,8 +56,18 @@ export default function CreatePOScreen() {
   return (
     <div>
       <div className="page-head">
-        <h1 className="page-title">New Purchase Order</h1>
-        <p className="page-sub">Raise an order against a supplier and delivery unit</p>
+        <div className="between wrap">
+          <div>
+            <h1 className="page-title">New Purchase Order</h1>
+            <p className="page-sub">Raise an order against a supplier and delivery unit</p>
+          </div>
+          <div className="btn-row">
+            <button className="btn btn-sm btn-ghost" onClick={() => handleCreate('DRAFT')}>Save Draft</button>
+            <button className="btn btn-sm btn-primary" onClick={() => handleCreate('PENDING_APPROVAL')}>
+              <Check size={15} /> Submit for Approval
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="card card-pad">

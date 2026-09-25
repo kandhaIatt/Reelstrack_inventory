@@ -24,13 +24,15 @@ public class DataInitializer implements CommandLineRunner {
     private final TransferRepository transferRepository;
     private final ActivityLogRepository activityLogRepository;
     private final PasswordEncoder passwordEncoder;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     public DataInitializer(UserRepository userRepository, UnitRepository unitRepository,
                            MillRepository millRepository, ReelTypeRepository reelTypeRepository,
                            BusinessConfigRepository businessConfigRepository, SupplierRepository supplierRepository,
                            ReelRepository reelRepository, CuttingJobRepository jobRepository,
                            PORepository poRepository, TransferRepository transferRepository,
-                           ActivityLogRepository activityLogRepository, PasswordEncoder passwordEncoder) {
+                           ActivityLogRepository activityLogRepository, PasswordEncoder passwordEncoder,
+                           org.springframework.jdbc.core.JdbcTemplate jdbcTemplate) {
         this.userRepository = userRepository;
         this.unitRepository = unitRepository;
         this.millRepository = millRepository;
@@ -43,10 +45,15 @@ public class DataInitializer implements CommandLineRunner {
         this.transferRepository = transferRepository;
         this.activityLogRepository = activityLogRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
     public void run(String... args) throws Exception {
+        // Fix legacy roles before doing JPA operations
+        try {
+            jdbcTemplate.update("UPDATE users SET role='USER' WHERE role IN ('OPERATOR', 'MANAGER')");
+        } catch (Exception ignored) {}
         if (userRepository.count() > 0) {
             return; // Data already initialized
         }
@@ -65,7 +72,7 @@ public class DataInitializer implements CommandLineRunner {
                 .username("operator")
                 .password(passwordEncoder.encode("password123"))
                 .name("R. Karthik")
-                .role(Role.OPERATOR)
+                .role(Role.USER)
                 .unitId("U1")
                 .email("karthik@reeltrack.com")
                 .build();
@@ -74,12 +81,21 @@ public class DataInitializer implements CommandLineRunner {
                 .username("operator_blr")
                 .password(passwordEncoder.encode("password123"))
                 .name("S. Prakash")
-                .role(Role.OPERATOR)
+                .role(Role.USER)
                 .unitId("U2")
                 .email("prakash@reeltrack.com")
                 .build();
 
-        userRepository.saveAll(Arrays.asList(admin, operator, operatorBlr));
+        User manager = User.builder()
+                .username("manager")
+                .password(passwordEncoder.encode("password123"))
+                .name("Manager Bob")
+                .role(Role.USER)
+                .unitId("U1")
+                .email("manager@reeltrack.com")
+                .build();
+
+        userRepository.saveAll(Arrays.asList(admin, operator, operatorBlr, manager));
 
         // 2. Units
         unitRepository.saveAll(Arrays.asList(
@@ -131,6 +147,11 @@ public class DataInitializer implements CommandLineRunner {
                 Supplier.builder().id("S7").name("Vensun Packaging Supplies").mill("Sri Lakshmi Papers").gst("33AACCV6612H1ZR").contact("B. Jeyanthi").phone("+91 87545 12009").terms("Advance").build(),
                 Supplier.builder().id("S8").name("Kaveri Paper Traders").mill("Tamil Nadu Kraft").gst("33AAJFK4590C1ZD").contact("T. Ilango").phone("+91 96770 33418").terms("45 Days").build()
         ));
+        // 6.5. Cleanup accidental Jobs in Reels table from previous bug
+        List<Reel> badReels = reelRepository.findAll().stream().filter(r -> r.getId() != null && r.getId().startsWith("JOB-")).toList();
+        if(!badReels.isEmpty()) {
+            reelRepository.deleteAll(badReels);
+        }
 
         // 7. Reels
         List<Reel> reels = Arrays.asList(

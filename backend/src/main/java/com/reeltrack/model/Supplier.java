@@ -15,6 +15,8 @@ public class Supplier {
     private String phone;
     private String terms;
 
+    private Boolean active = true;
+
     public Supplier() {}
 
     public Supplier(String id, String name, String mill, String gst, String contact, String phone, String terms) {
@@ -25,6 +27,7 @@ public class Supplier {
         this.contact = contact;
         this.phone = phone;
         this.terms = terms;
+        this.active = true;
     }
 
     public String getId() { return id; }
@@ -47,6 +50,9 @@ public class Supplier {
 
     public String getTerms() { return terms; }
     public void setTerms(String terms) { this.terms = terms; }
+
+    public Boolean getActive() { return active != null ? active : true; }
+    public void setActive(Boolean active) { this.active = active; }
 
     public static SupplierBuilder builder() { return new SupplierBuilder(); }
 

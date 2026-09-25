@@ -15,7 +15,7 @@ class TransferServiceTest {
     @Test
     void transferRequiresDestinationUnit() {
         TransferService service = new TransferService(mock(ReelRepository.class),
-                mock(TransferRepository.class), mock(ActivityLogRepository.class));
+                mock(TransferRepository.class), mock(ActivityLogRepository.class), mock(com.reeltrack.repository.LedgerEntryRepository.class));
 
         TransferRequest request = new TransferRequest("R-1", "", null, null);
 

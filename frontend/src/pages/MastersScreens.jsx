@@ -3,8 +3,9 @@ import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 // Backend integration will be enabled later.
 import { mastersApi } from '../api/services';
+import MasterActions from '../components/MasterActions';
 
-import { mills } from "./data/mockData";
+
 
 import {
   Eye,
@@ -19,26 +20,209 @@ import {
   Users as UsersIcon,
   LogOut,
   Lock,
+  Key,
 } from 'lucide-react';
 
 export function SuppliersScreen() {
-  const { suppliers } = useApp();
+  const { user } = useAuth();
+  const { showToast } = useApp();
+  const isAdmin = user?.role === 'ADMIN';
+
+  const [suppliers, setSuppliers] = useState([]);
+  const [editing, setEditing] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const load = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await mastersApi.getSuppliers();
+      setSuppliers(Array.isArray(response.data) ? response.data : []);
+    } catch (err) {
+      console.error('Failed to load suppliers:', err);
+      setError(err.response?.data?.message || 'Unable to load suppliers from backend');
+      setSuppliers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const blank = {
+    id: '',
+    name: '',
+    mill: '',
+    gst: '',
+    contact: '',
+    phone: '',
+    terms: '30 Days',
+  };
+
+  const save = async () => {
+    if (!editing || !editing.name || !editing.name.trim()) {
+      alert('Supplier name is required');
+      return;
+    }
+
+    try {
+      await mastersApi.saveSupplier(editing.id || null, {
+        id: editing.id || undefined,
+        name: editing.name.trim(),
+        mill: editing.mill || '',
+        gst: editing.gst || '',
+        contact: editing.contact || '',
+        phone: editing.phone || '',
+        terms: editing.terms || '30 Days',
+      });
+      showToast('Supplier saved', `Successfully saved ${editing.name}`);
+      setEditing(null);
+      await load();
+    } catch (err) {
+      console.error('Failed to save supplier:', err);
+      alert(err.response?.data?.message || 'Unable to save supplier');
+    }
+  };
+
+  const remove = async (id, name) => {
+    if (!window.confirm(`Delete supplier "${name}"?`)) return;
+    try {
+      await mastersApi.deleteSupplier(id);
+      showToast('Supplier deleted', `Removed ${name}`);
+      await load();
+    } catch (err) {
+      console.error('Failed to delete supplier:', err);
+      alert(err.response?.data?.message || 'Unable to delete supplier');
+    }
+  };
 
   return (
     <div>
-      <div className="page-head">
-        <h1 className="page-title">Suppliers</h1>
-        <p className="page-sub">
-          {suppliers.length} registered suppliers
-        </p>
+      <div className="page-head between">
+        <div>
+          <h1 className="page-title">Suppliers</h1>
+          <p className="page-sub">
+            {loading ? 'Loading...' : `${suppliers.length} registered suppliers in MySQL`}
+          </p>
+        </div>
+
+        {isAdmin && (
+          <button
+            className="btn btn-primary"
+            onClick={() => setEditing({ ...blank })}
+          >
+            <Plus size={16} />
+            Add supplier
+          </button>
+        )}
       </div>
 
-      <div className="listcard">
-        {suppliers.length === 0 ? (
-          <div className="empty">
-            No suppliers found
+      {isAdmin && editing && (
+        <div className="modal">
+          <div className="modal-content" style={{ maxWidth: '600px' }}>
+            <div className="between" style={{ marginBottom: '12px' }}>
+              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 650 }}>
+                {editing.id ? `Edit Supplier (${editing.id})` : 'New Supplier'}
+              </h3>
+            </div>
+
+            <div className="grid-2">
+              <div className="field">
+                <label>Supplier ID</label>
+                <input
+                  className="input"
+                  placeholder="Auto-generated if blank (e.g. S1)"
+                  value={editing.id}
+                  disabled={!!suppliers.find((s) => s.id === editing.id)}
+                  onChange={(e) => setEditing({ ...editing, id: e.target.value })}
+                />
+              </div>
+
+              <div className="field">
+                <label>Supplier Name *</label>
+                <input
+                  className="input"
+                  placeholder="e.g. Suvarna Durga Paper Mill"
+                  value={editing.name}
+                  onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+                />
+              </div>
+
+              <div className="field">
+                <label>Associated Mill</label>
+                <input
+                  className="input"
+                  placeholder="e.g. Suvarna Durga"
+                  value={editing.mill || ''}
+                  onChange={(e) => setEditing({ ...editing, mill: e.target.value })}
+                />
+              </div>
+
+              <div className="field">
+                <label>GSTIN</label>
+                <input
+                  className="input"
+                  placeholder="e.g. 37AAAAA0000A1Z5"
+                  value={editing.gst || ''}
+                  onChange={(e) => setEditing({ ...editing, gst: e.target.value.toUpperCase() })}
+                />
+              </div>
+
+              <div className="field">
+                <label>Contact Person</label>
+                <input
+                  className="input"
+                  placeholder="e.g. Venkatesh Rao"
+                  value={editing.contact || ''}
+                  onChange={(e) => setEditing({ ...editing, contact: e.target.value })}
+                />
+              </div>
+
+              <div className="field">
+                <label>Phone Number</label>
+                <input
+                  className="input"
+                  placeholder="e.g. +91 98490 12345"
+                  value={editing.phone || ''}
+                  onChange={(e) => setEditing({ ...editing, phone: e.target.value })}
+                />
+              </div>
+
+              <div className="field">
+                <label>Payment Terms</label>
+                <input
+                  className="input"
+                  placeholder="e.g. 30 Days Credit"
+                  value={editing.terms || ''}
+                  onChange={(e) => setEditing({ ...editing, terms: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="btn-row mt10">
+              <button className="btn btn-ghost" onClick={() => setEditing(null)}>
+                Cancel
+              </button>
+              <button className="btn btn-primary" onClick={save}>
+                Save supplier
+              </button>
+            </div>
           </div>
-        ) : (
+        </div>
+      )}
+
+      <div className="listcard mt14">
+        {loading && <div className="empty">Loading suppliers from database...</div>}
+        {!loading && error && <div className="empty">{error}</div>}
+        {!loading && !error && suppliers.length === 0 && (
+          <div className="empty">No suppliers found in database.</div>
+        )}
+
+        {!loading &&
+          !error &&
           suppliers.map((supplier) => (
             <div key={supplier.id} className="li">
               <div className="li-ico">
@@ -48,64 +232,253 @@ export function SuppliersScreen() {
               <div className="li-main">
                 <div className="li-title">
                   {supplier.name}
+                  {supplier.gst && (
+                    <span className="badge b-muted" style={{ marginLeft: '8px' }}>
+                      GST: {supplier.gst}
+                    </span>
+                  )}
                 </div>
 
                 <div className="li-sub">
-                  {supplier.contact} · {supplier.phone} ·
-                  Terms: {supplier.terms}
+                  {supplier.contact ? `Contact: ${supplier.contact} · ` : ''}
+                  {supplier.phone ? `${supplier.phone} · ` : ''}
+                  Terms: {supplier.terms || '30 Days'}
+                  {supplier.mill ? ` · Mill: ${supplier.mill}` : ''}
                 </div>
               </div>
 
-              <span className="badge b-muted">
-                {supplier.mill}
-              </span>
+              {isAdmin && (
+                <div className="row" style={{ gap: '8px' }}>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    title="Edit supplier"
+                    onClick={() => setEditing({ ...supplier })}
+                  >
+                    <Pencil size={15} />
+                  </button>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    title="Delete supplier"
+                    style={{ color: 'var(--danger)' }}
+                    onClick={() => remove(supplier.id, supplier.name)}
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              )}
             </div>
-          ))
-        )}
+          ))}
       </div>
     </div>
   );
 }
 export function MillsScreen() {
+  const { user } = useAuth();
+
+  const isAdmin = user?.role === 'ADMIN';
+
   const [mills, setMills] = useState([]);
+  const [editing, setEditing] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const load = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = isAdmin
+        ? await mastersApi.getAllMills()
+        : await mastersApi.getMills();
+
+      setMills(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      console.error('Failed to load mills:', error);
+
+      setError(
+        error.response?.data?.message ||
+        'Unable to load mills from the backend.'
+      );
+
+      setMills([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    mastersApi
-      .getMills()
-      .then((res) => {
-        setMills(res.data);
-      })
-      .catch((error) => {
-        console.error("Failed to load mills:", error);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, []);
+    load();
+  }, [isAdmin]);
+
+  const blank = {
+    id: '',
+    name: '',
+    place: '',
+    grades: '',
+    active: true,
+  };
+
+  const save = async () => {
+    if (!editing) {
+      return;
+    }
+
+    try {
+      await mastersApi.saveMill(
+        editing.id || null,
+        {
+          id: editing.id,
+          name: editing.name,
+          place: editing.place || '',
+          grades: editing.grades || '',
+          active: editing.active !== false,
+        }
+      );
+
+      setEditing(null);
+      await load();
+    } catch (error) {
+      console.error('Failed to save mill:', error);
+
+      alert(
+        error.response?.data?.message ||
+        'Unable to save mill'
+      );
+    }
+  };
+
+  const toggleMill = async (id) => {
+    try {
+      await mastersApi.setMillActive(id);
+      await load();
+    } catch (error) {
+      console.error('Failed to toggle mill:', error);
+
+      alert(
+        error.response?.data?.message ||
+        'Unable to change mill status'
+      );
+    }
+  };
 
   return (
     <div>
-      <div className="page-head">
-        <h1 className="page-title">Mills</h1>
+      <div className="page-head between">
+        <div>
+          <h1 className="page-title">Mills</h1>
+          <p className="page-sub">
+            Controlled paper-mill master values
+          </p>
+        </div>
 
-        <p className="page-sub">
-          {mills.length} paper mills supplying stock
-        </p>
+        {isAdmin && (
+          <button
+            className="btn btn-primary"
+            onClick={() => setEditing({ ...blank })}
+          >
+            <Plus size={16} />
+            Add mill
+          </button>
+        )}
       </div>
 
-      <div className="listcard">
-        {loading ? (
+      {isAdmin && editing && (
+        <div className="modal">
+          <div className="modal-content" style={{ maxWidth: '600px' }}>
+            <h3 style={{ margin: '0 0 15px 0' }}>{editing.id ? 'Edit Mill' : 'New Mill'}</h3>
+            <div className="grid-2">
+              <div className="field">
+                <label>ID</label>
+                <input
+                  className="input"
+                  value={editing.id}
+                  disabled={!!mills.find((item) => item.id === editing.id)}
+                  onChange={(event) =>
+                    setEditing({
+                      ...editing,
+                      id: event.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="field">
+                <label>Name</label>
+                <input
+                  className="input"
+                  value={editing.name}
+                  onChange={(event) =>
+                    setEditing({
+                      ...editing,
+                      name: event.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="field">
+                <label>Place</label>
+                <input
+                  className="input"
+                  value={editing.place || ''}
+                  onChange={(event) =>
+                    setEditing({
+                      ...editing,
+                      place: event.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="field">
+                <label>Grades</label>
+                <input
+                  className="input"
+                  value={editing.grades || ''}
+                  onChange={(event) =>
+                    setEditing({
+                      ...editing,
+                      grades: event.target.value,
+                    })
+                  }
+                />
+              </div>
+            </div>
+            <div className="btn-row mt10">
+              <button className="btn btn-ghost" onClick={() => setEditing(null)}>
+                Cancel
+              </button>
+              <button className="btn btn-primary" onClick={save}>
+                Save mill
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="listcard mt14">
+        {loading && (
           <div className="empty">
             Loading mills...
           </div>
-        ) : mills.length === 0 ? (
+        )}
+
+        {!loading && error && (
           <div className="empty">
-            No mills found
+            {error}
           </div>
-        ) : (
+        )}
+
+        {!loading && !error && mills.length === 0 && (
+          <div className="empty">
+            No mills found.
+          </div>
+        )}
+
+        {!loading &&
+          !error &&
           mills.map((mill) => (
-            <div key={mill.id} className="li">
+            <div
+              key={mill.id}
+              className="li"
+            >
               <div className="li-ico">
                 <Building size={18} />
               </div>
@@ -113,15 +486,40 @@ export function MillsScreen() {
               <div className="li-main">
                 <div className="li-title">
                   {mill.name}
+
+                  <span
+                    className={`badge ${
+                      mill.active
+                        ? 'b-ok'
+                        : 'b-muted'
+                    }`}
+                  >
+                    {mill.active
+                      ? 'Active'
+                      : 'Inactive'}
+                  </span>
                 </div>
 
                 <div className="li-sub">
-                  {mill.place} · {mill.grades}
+                  {mill.place || '—'}
+                  {' · '}
+                  {mill.grades || '—'}
                 </div>
               </div>
+
+              {isAdmin && (
+                <MasterActions
+                  active={mill.active}
+                  onEdit={() =>
+                    setEditing({ ...mill })
+                  }
+                  onToggle={() =>
+                    toggleMill(mill.id)
+                  }
+                />
+              )}
             </div>
-          ))
-        )}
+          ))}
       </div>
     </div>
   );
@@ -129,39 +527,75 @@ export function MillsScreen() {
 
 
 export function ReelTypesScreen() {
-  const { reelTypes } = useApp();
-
+  const { user }=useAuth(); const isAdmin=user?.role==='ADMIN';
+  const [types,setTypes]=useState([]); const [editing,setEditing]=useState(null); const [loading,setLoading]=useState(true);
+  const load=()=>{setLoading(true);(isAdmin?mastersApi.getAllReelTypes():mastersApi.getReelTypes()).then(r=>setTypes(r.data)).finally(()=>setLoading(false));}; useEffect(load,[isAdmin]);
+  const blank={id:'',name:'',defaultGsm:120,bf:18,active:true};
+  const save=async()=>{try{await mastersApi.saveReelType(editing.id||null,{...editing,defaultGsm:Number(editing.defaultGsm),bf:Number(editing.bf)});setEditing(null);load();}catch(e){alert(e.response?.data?.message||'Unable to save reel type');}};
   return (
     <div>
-      <div className="page-head">
-        <h1 className="page-title">Reel Types</h1>
-
-        <p className="page-sub">
-          Paper grades configured for manufacturing
-        </p>
+      <div className="page-head between">
+        <div>
+          <h1 className="page-title">Reel Types</h1>
+          <p className="page-sub">Controlled grades with default GSM and BF</p>
+        </div>
+        {isAdmin && (
+          <button className="btn btn-primary" onClick={() => setEditing(blank)}>
+            <Plus size={16} /> Add type
+          </button>
+        )}
       </div>
-
-      <div className="listcard">
-        {reelTypes.length === 0 ? (
-          <div className="empty">
-            No reel types found
-          </div>
-        ) : (
-          reelTypes.map((type) => (
-            <div key={type.id} className="li">
-              <div className="li-ico">
-                <Layers size={18} />
+      
+      {isAdmin && editing && (
+        <div className="modal">
+          <div className="modal-content" style={{ maxWidth: '500px' }}>
+            <h3 style={{ margin: '0 0 15px 0' }}>{editing.id ? 'Edit Reel Type' : 'New Reel Type'}</h3>
+            <div className="grid-2">
+              <div className="field">
+                <label>ID</label>
+                <input className="input" value={editing.id} disabled={!!types.find(x => x.id === editing.id)} onChange={e => setEditing({ ...editing, id: e.target.value })} />
               </div>
+              <div className="field">
+                <label>Name</label>
+                <input className="input" value={editing.name} onChange={e => setEditing({ ...editing, name: e.target.value })} />
+              </div>
+              <div className="field">
+                <label>Default GSM</label>
+                <input className="input num" type="number" value={editing.defaultGsm} onChange={e => setEditing({ ...editing, defaultGsm: e.target.value })} />
+              </div>
+              <div className="field">
+                <label>BF</label>
+                <input className="input num" type="number" value={editing.bf} onChange={e => setEditing({ ...editing, bf: e.target.value })} />
+              </div>
+            </div>
+            <div className="btn-row mt10">
+              <button className="btn btn-ghost" onClick={() => setEditing(null)}>Cancel</button>
+              <button className="btn btn-primary" onClick={save}>Save type</button>
+            </div>
+          </div>
+        </div>
+      )}
 
+      <div className="listcard mt14">
+        {loading ? (
+          <div className="empty">Loading reel types...</div>
+        ) : (
+          types.map(t => (
+            <div key={t.id} className="li">
+              <div className="li-ico"><Layers size={18} /></div>
               <div className="li-main">
                 <div className="li-title">
-                  {type.name}
+                  {t.name} <span className={`badge ${t.active ? 'b-ok' : 'b-muted'}`}>{t.active ? 'Active' : 'Inactive'}</span>
                 </div>
-
-                <div className="li-sub">
-                  Standard corrugation &amp; cutting grade
-                </div>
+                <div className="li-sub">Default {t.defaultGsm} GSM · BF {t.bf}</div>
               </div>
+              {isAdmin && (
+                <MasterActions 
+                  active={t.active} 
+                  onEdit={() => setEditing({ ...t })} 
+                  onToggle={async () => { await mastersApi.setReelTypeActive(t.id, !t.active); load(); }} 
+                />
+              )}
             </div>
           ))
         )}
@@ -169,325 +603,189 @@ export function ReelTypesScreen() {
     </div>
   );
 }
-   
-
-export function UsersScreen() {
-  const {
-    user: currentUser,
-    users,
-    createUser,
-    updateUser,
-    setUserActive,
-    deleteUser,
-  } = useAuth();
+export function UnitsMasterScreen() {
+  const { user } = useAuth();
   const { showToast } = useApp();
+  const isAdmin = user?.role === 'ADMIN';
+  const [units, setUnits] = useState([]);
+  const [editing, setEditing] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [formError, setFormError] = useState('');
-  const [form, setForm] = useState({
+  const load = () => {
+    setLoading(true);
+    (isAdmin ? mastersApi.getAllUnits() : mastersApi.getUnits())
+      .then((r) => setUnits(Array.isArray(r.data) ? r.data : []))
+      .catch((err) => {
+        console.error('Failed to load units:', err);
+        setUnits([]);
+      })
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(load, [isAdmin]);
+
+  const blank = {
+    id: '',
     name: '',
-    email: '',
-    mobile: '',
-    role: 'USER',
-    unitId: 'U1',
-    password: '',
-  });
-
-  const resetForm = () => {
-    setForm({
-      name: '',
-      email: '',
-      mobile: '',
-      role: 'USER',
-      unitId: 'U1',
-      password: '',
-    });
-    setFormError('');
-    setEditingId(null);
-    setShowForm(false);
+    code: '',
+    city: '',
+    stateCode: '33',
+    incharge: '',
+    targetReels: 0,
+    targetWeight: 0,
+    targetJobs: 0,
+    active: true,
   };
 
-  const openCreate = () => {
-    setEditingId(null);
-    setForm({
-      name: '',
-      email: '',
-      mobile: '',
-      role: 'USER',
-      unitId: 'U1',
-      password: '',
-    });
-    setFormError('');
-    setShowForm(true);
-  };
-
-  const openEdit = (target) => {
-    setEditingId(target.id);
-    setForm({
-      name: target.name || '',
-      email: target.email || '',
-      mobile: target.mobile || '',
-      role: target.role === 'ADMIN' ? 'ADMIN' : 'USER',
-      unitId: target.unitId || 'U1',
-      password: '',
-    });
-    setFormError('');
-    setShowForm(true);
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setFormError('');
-
-    const payload = {
-      name: form.name,
-      email: form.email,
-      mobile: form.mobile,
-      role: form.role,
-      unitId: form.unitId,
-    };
-
-    const result = editingId
-      ? updateUser(editingId, payload)
-      : createUser({ ...payload, password: form.password });
-
-    if (!result.success) {
-      setFormError(result.message);
+  const save = async () => {
+    if (!editing.name || !editing.name.trim()) {
+      alert('Unit name is required');
+      return;
+    }
+    if (!editing.code || !editing.code.trim()) {
+      alert('Unit code is required');
+      return;
+    }
+    if (!editing.stateCode || editing.stateCode.trim().length !== 2) {
+      alert('GST state code must be 2 characters (e.g. 33 or TN)');
       return;
     }
 
-    showToast(
-      editingId ? 'User updated' : 'User created',
-      result.message
-    );
-    resetForm();
-  };
-
-  const handleToggleActive = (target) => {
-    const result = setUserActive(target.id, !target.active);
-    if (!result.success) {
-      showToast('Action blocked', result.message, true);
-      return;
+    try {
+      await mastersApi.saveUnit(editing.id || null, {
+        ...editing,
+        name: editing.name.trim(),
+        code: editing.code.trim().toUpperCase(),
+        stateCode: editing.stateCode.trim().toUpperCase(),
+        targetReels: Number(editing.targetReels || 0),
+        targetWeight: Number(editing.targetWeight || 0),
+        targetJobs: Number(editing.targetJobs || 0),
+      });
+      showToast('Unit saved', `Saved unit ${editing.name}`);
+      setEditing(null);
+      load();
+    } catch (e) {
+      alert(e.response?.data?.message || 'Unable to save unit');
     }
-    showToast(
-      target.active ? 'User deactivated' : 'User activated',
-      result.message
-    );
-  };
-
-  const handleDelete = (target) => {
-    if (!window.confirm(`Delete ${target.name}? This action cannot be undone.`)) {
-      return;
-    }
-
-    const result = deleteUser(target.id);
-    if (!result.success) {
-      showToast('Delete failed', result.message, true);
-      return;
-    }
-    showToast('User deleted', result.message);
   };
 
   return (
     <div>
       <div className="page-head between">
         <div>
-          <h1 className="page-title">User Management</h1>
-          <p className="page-sub">
-            {users.length} accounts · Admins manage access and roles
-          </p>
+          <h1 className="page-title">Manufacturing Units</h1>
+          <p className="page-sub">Unit code, city and GST state code</p>
         </div>
-
-        <button className="btn btn-primary" onClick={openCreate}>
-          <Plus size={17} />
-          Create User
-        </button>
+        {isAdmin && (
+          <button className="btn btn-primary" onClick={() => setEditing(blank)}>
+            <Plus size={16} /> Add unit
+          </button>
+        )}
       </div>
-
-      {showForm && (
-        <div className="card card-pad" style={{ marginBottom: '14px' }}>
-          <div className="between" style={{ marginBottom: '16px' }}>
-            <div>
-              <div style={{ fontSize: '16px', fontWeight: 700 }}>
-                {editingId ? 'Edit User' : 'Create New User'}
-              </div>
-              <div className="tiny muted">
-                {editingId
-                  ? 'Update account details and role.'
-                  : 'Create an account and assign Admin or User access.'}
-              </div>
-            </div>
-            <button className="btn btn-ghost btn-sm" onClick={resetForm}>
-              Cancel
-            </button>
-          </div>
-
-          {formError && (
-            <div
-              className="pill-note warn"
-              style={{
-                marginBottom: '14px',
-                background: 'var(--danger-soft)',
-                color: 'var(--danger)',
-              }}
-            >
-              {formError}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit}>
-            <div className="grid-2">
+      {isAdmin && editing && (
+        <div className="modal">
+          <div className="modal-content" style={{ maxWidth: '600px' }}>
+            <h3 className="h3">{editing.id ? 'Edit Unit' : 'Add Unit'}</h3>
+            <div className="grid-2 mt14">
               <div className="field">
-                <label>Full Name *</label>
+                <label>ID</label>
                 <input
                   className="input"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="Enter full name"
+                  value={editing.id}
+                  disabled={!!units.find((x) => x.id === editing.id)}
+                  onChange={(e) => setEditing({ ...editing, id: e.target.value })}
                 />
               </div>
-
               <div className="field">
-                <label>Email *</label>
+                <label>Name *</label>
                 <input
                   className="input"
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  placeholder="name@example.com"
+                  value={editing.name}
+                  onChange={(e) => setEditing({ ...editing, name: e.target.value })}
                 />
               </div>
-
               <div className="field">
-                <label>Mobile *</label>
+                <label>Code *</label>
                 <input
                   className="input"
-                  inputMode="numeric"
-                  maxLength={10}
-                  value={form.mobile}
-                  onChange={(e) => setForm({ ...form, mobile: e.target.value.replace(/\D/g, '') })}
-                  placeholder="10-digit mobile number"
+                  value={editing.code}
+                  onChange={(e) => setEditing({ ...editing, code: e.target.value.toUpperCase() })}
                 />
               </div>
-
               <div className="field">
-                <label>Role *</label>
-                <select
-                  className="select"
-                  value={form.role}
-                  onChange={(e) => setForm({ ...form, role: e.target.value })}
-                >
-                  <option value="USER">User</option>
-                  <option value="ADMIN">Admin</option>
-                </select>
+                <label>City</label>
+                <input
+                  className="input"
+                  value={editing.city}
+                  onChange={(e) => setEditing({ ...editing, city: e.target.value })}
+                />
               </div>
-
-              {form.role === 'USER' && (
-                <div className="field">
-                  <label>Unit</label>
-                  <input
-                    className="input"
-                    value={form.unitId}
-                    onChange={(e) => setForm({ ...form, unitId: e.target.value })}
-                    placeholder="U1"
-                  />
-                </div>
-              )}
-
-              {!editingId && (
-                <div className="field">
-                  <label>Temporary Password *</label>
-                  <input
-                    className="input"
-                    type="password"
-                    value={form.password}
-                    onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    placeholder="Min 8 chars, uppercase + special"
-                  />
-                </div>
-              )}
+              <div className="field">
+                <label>GST state code *</label>
+                <input
+                  className="input num"
+                  maxLength={2}
+                  value={editing.stateCode}
+                  onChange={(e) => setEditing({ ...editing, stateCode: e.target.value.toUpperCase() })}
+                  placeholder="33 or TN"
+                />
+              </div>
+              <div className="field">
+                <label>In-charge</label>
+                <input
+                  className="input"
+                  value={editing.incharge || ''}
+                  onChange={(e) => setEditing({ ...editing, incharge: e.target.value })}
+                />
+              </div>
             </div>
-
-            <div className="btn-row" style={{ marginTop: '8px' }}>
-              <button type="button" className="btn btn-ghost" onClick={resetForm}>
+            <div className="btn-row mt14">
+              <button className="btn btn-ghost" onClick={() => setEditing(null)}>
                 Cancel
               </button>
-              <button type="submit" className="btn btn-primary">
-                {editingId ? 'Save Changes' : 'Create Account'}
+              <button className="btn btn-primary" onClick={save}>
+                Save unit
               </button>
             </div>
-          </form>
+          </div>
         </div>
       )}
-
-      <div className="listcard">
-        {users.length === 0 ? (
-          <div className="empty">No users found</div>
+      <div className="listcard mt14">
+        {loading ? (
+          <div className="empty">Loading units...</div>
         ) : (
-          users.map((target) => {
-            const isSelf = target.id === currentUser?.id;
-
-            return (
-              <div key={target.id} className="li" style={{ alignItems: 'flex-start' }}>
-                <div className="li-ico">
-                  <UsersIcon size={18} />
+          units.map((u) => (
+            <div key={u.id} className="li">
+              <div className="li-ico">
+                <Building size={18} />
+              </div>
+              <div className="li-main">
+                <div className="li-title">
+                  {u.name} <span className={`badge ${u.active ? 'b-ok' : 'b-muted'}`}>{u.active ? 'Active' : 'Inactive'}</span>
                 </div>
-
-                <div className="li-main">
-                  <div className="li-title">
-                    {target.name}
-                    {isSelf && (
-                      <span className="tiny muted" style={{ marginLeft: '7px' }}>
-                        (You)
-                      </span>
-                    )}
-                  </div>
-                  <div className="li-sub">
-                    {target.email} · {target.mobile} · Unit: {target.unitId || '—'}
-                  </div>
-                  <div className="row" style={{ marginTop: '7px', gap: '6px' }}>
-                    <span className={`badge ${target.role === 'ADMIN' ? 'b-primary' : 'b-ok'}`}>
-                      {target.role === 'ADMIN' ? 'Admin' : 'User'}
-                    </span>
-                    <span className={`badge ${target.active ? 'b-ok' : 'b-danger'}`}>
-                      {target.active ? 'Active' : 'Inactive'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="row" style={{ alignSelf: 'center' }}>
-                  <button
-                    className="icon-btn"
-                    title="Edit user"
-                    onClick={() => openEdit(target)}
-                  >
-                    <Pencil size={16} />
-                  </button>
-                  <button
-                    className="icon-btn"
-                    title={target.active ? 'Deactivate user' : 'Activate user'}
-                    onClick={() => handleToggleActive(target)}
-                  >
-                    <Power size={16} />
-                  </button>
-                  <button
-                    className="icon-btn"
-                    title="Delete user"
-                    onClick={() => handleDelete(target)}
-                    disabled={isSelf}
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                <div className="li-sub">
+                  {u.code} · {u.city} · GST state {u.stateCode}
                 </div>
               </div>
-            );
-          })
+              {isAdmin && (
+                <MasterActions
+                  active={u.active}
+                  onEdit={() => setEditing({ ...u })}
+                  onToggle={async () => {
+                    await mastersApi.setUnitActive(u.id);
+                    showToast('Unit updated', `Toggled status for ${u.name}`);
+                    load();
+                  }}
+                />
+              )}
+            </div>
+          ))
         )}
       </div>
     </div>
   );
 }
+
 
 export function SettingsScreen() {
   const {
@@ -517,7 +815,7 @@ const [showConfirmPassword, setShowConfirmPassword] =
 
   const [passwordError, setPasswordError] = useState('');
 
-  const handlePasswordChange = () => {
+  const handlePasswordChange = async () => {
   setPasswordError("");
 
   if (
@@ -567,7 +865,7 @@ const [showConfirmPassword, setShowConfirmPassword] =
   }
 
   // Call AuthContext password change function
-  const result = changePassword(
+  const result = await changePassword(
     passwords.currentPassword,
     passwords.newPassword
   );
@@ -813,39 +1111,90 @@ const [showConfirmPassword, setShowConfirmPassword] =
         )}
       </div>
 
-      {/* Calculation Settings */}
-      <div className="sec">
-        <span className="sec-title">
-          Calculation Settings
-        </span>
-      </div>
-
-      <div className="card card-pad">
-        <div className="field">
-          <label>Corrugation factor</label>
-
-          <div className="chips">
-            {[0.35, 0.4, 0.45, 0.5].map((value) => (
-              <button
-                key={value}
-                className={`chip ${
-                  settings.corrugationFactor === value
-                    ? 'on'
-                    : ''
-                }`}
-                onClick={() =>
-                  setSettings({
-                    ...settings,
-                    corrugationFactor: value,
-                  })
-                }
-              >
-                ×{(1 + value).toFixed(2)} ({value.toFixed(2)})
-              </button>
-            ))}
+      {/* System Configuration */}
+      {isAdmin && (
+        <>
+          <div className="sec">
+            <span className="sec-title">
+              System Configuration
+            </span>
           </div>
-        </div>
-      </div>
+
+          <div className="card card-pad">
+            <div className="field">
+              <label>Low Stock Threshold (%)</label>
+              <input type="number" className="input num" defaultValue="25" />
+              <div className="tiny dim">Alert when reel remaining weight drops below this percentage of original.</div>
+            </div>
+            
+            <div className="field mt14">
+              <label>Exhaustion Tolerance (kg)</label>
+              <input type="number" className="input num" defaultValue="1" />
+              <div className="tiny dim">Reel is considered exhausted if remaining weight is below this.</div>
+            </div>
+
+            <div className="field mt14">
+              <label>Corrugation factor</label>
+              <div className="chips">
+                {[0.35, 0.4, 0.45, 0.5].map((value) => (
+                  <button
+                    key={value}
+                    className={`chip ${
+                      settings.corrugationFactor === value
+                        ? 'on'
+                        : ''
+                    }`}
+                    onClick={() =>
+                      setSettings({
+                        ...settings,
+                        corrugationFactor: value,
+                      })
+                    }
+                  >
+                    ×{(1 + value).toFixed(2)} ({value.toFixed(2)})
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="field mt14">
+              <label>Default GST (%)</label>
+              <input type="number" className="input num" defaultValue="12" />
+            </div>
+
+            <div className="field mt14">
+              <label>Over-receipt Tolerance (%)</label>
+              <input type="number" className="input num" defaultValue="5" />
+              <div className="tiny dim">Allow goods receipt weight to exceed PO line weight by this margin.</div>
+            </div>
+
+            <div className="field mt14">
+              <label>Reversal Window (hours)</label>
+              <input type="number" className="input num" defaultValue="24" />
+              <div className="tiny dim">Time limit for reversing a cutting job.</div>
+            </div>
+
+            <div className="field mt14">
+              <label>Session Timeout (minutes)</label>
+              <input type="number" className="input num" defaultValue="120" />
+            </div>
+
+            <div className="field mt14">
+              <label>Decimal Precision</label>
+              <div className="chips">
+                <button className="chip on">3 Digits</button>
+                <button className="chip">2 Digits</button>
+              </div>
+            </div>
+
+            <div className="mt14 btn-row">
+              <button className="btn btn-primary" onClick={() => showToast('Success', 'System configuration saved')}>
+                Save Configuration
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Account */}
       <div className="sec">

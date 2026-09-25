@@ -17,6 +17,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.reeltrack.model.Role;
 import com.reeltrack.model.User;
 import com.reeltrack.repository.UserRepository;
+import com.reeltrack.repository.PasswordResetTokenRepository;
 import com.reeltrack.security.JwtUtil;
 
 @ExtendWith(MockitoExtension.class)
@@ -26,6 +27,9 @@ class AuthServiceTest {
     @Mock PasswordEncoder passwordEncoder;
     private JwtUtil jwtUtil;
 
+    @Mock
+    private PasswordResetTokenRepository passwordResetTokenRepository;
+
     private AuthService service;
     private User user;
 
@@ -34,9 +38,9 @@ class AuthServiceTest {
         jwtUtil = new JwtUtil();
         ReflectionTestUtils.setField(jwtUtil, "secret", "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970");
         ReflectionTestUtils.setField(jwtUtil, "expiration", 86400000L);
-        service = new AuthService(userRepository, passwordEncoder, jwtUtil);
+        service = new AuthService(userRepository, passwordEncoder, jwtUtil, passwordResetTokenRepository);
         user = User.builder().username("operator").password("hash").name("Operator")
-                .role(Role.OPERATOR).unitId("U1").build();
+                .role(Role.USER).unitId("U1").build();
     }
 
     @Test

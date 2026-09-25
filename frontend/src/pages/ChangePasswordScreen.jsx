@@ -1,117 +1,88 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import {
-  Lock,
-  ShieldAlert,
-  CheckCircle,
-  Eye,
-  EyeOff,
-} from "lucide-react";
+import { Lock, ShieldAlert, CheckCircle, Eye, EyeOff } from "lucide-react";
 
 export default function ChangePasswordScreen() {
   const { changePassword } = useAuth();
+  const navigate = useNavigate();
 
-  const [currentPassword, setCurrentPassword] =
-    useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
-  const [newPassword, setNewPassword] =
-    useState("");
-
-  const [confirmPassword, setConfirmPassword] =
-    useState("");
-
-  const [showCurrentPassword, setShowCurrentPassword] =
-  useState(false);
-
-const [showNewPassword, setShowNewPassword] =
-  useState(false);
-
-const [showConfirmPassword, setShowConfirmPassword] =
-  useState(false);  
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [error, setError] = useState("");
-
   const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     setError("");
     setSuccess("");
 
-    if (
-      !currentPassword ||
-      !newPassword ||
-      !confirmPassword
-    ) {
+    if (!currentPassword || !newPassword || !confirmPassword) {
       setError("Please fill in all fields.");
       return;
     }
 
     if (newPassword.length < 8) {
-      setError(
-        "Password must contain at least 8 characters."
-      );
+      setError("Password must contain at least 8 characters.");
       return;
     }
 
     if (!/[A-Z]/.test(newPassword)) {
-      setError(
-        "Password must contain at least one uppercase letter."
-         
-      );
+      setError("Password must contain at least one uppercase letter.");
       return;
     }
 
     if (!/[!@#$%^&*(),.?":{}|<>]/.test(newPassword)) {
-      setError(
-        "Password must contain at least one special character."
-      );
+      setError("Password must contain at least one special character.");
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError(
-        "New password and confirm password do not match."
-      );
+      setError("New password and confirm password do not match.");
       return;
     }
 
-    const result = changePassword(
-      currentPassword,
-      newPassword
-    );
+    setLoading(true);
 
-    if (!result.success) {
-      setError(result.message);
-      return;
+    try {
+      const result = await changePassword(currentPassword, newPassword);
+
+      if (!result.success) {
+        setError(result.message);
+        return;
+      }
+
+      setSuccess("Password changed successfully.");
+
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+
+      navigate("/dashboard", { replace: true });
+    } catch (error) {
+      setError("Unable to change password. Please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    setSuccess(
-      "Password changed successfully."
-    );
-
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
   };
 
   return (
-    <div>
-      <div className="page-head">
-        <h1 className="page-title">
-          Change Password
-        </h1>
+    <div className="change-password-page">
+      <div className="change-password-head">
+        <h1 className="page-title">Change Password</h1>
 
-        <p className="page-sub">
-          Update your account password securely
-        </p>
+        <p className="page-sub">Update your account password securely</p>
       </div>
 
-      <div
-        className="card card-pad"
-        style={{ maxWidth: "520px" }}
-      >
+      <div className="change-password-card">
         {error && (
           <div
             className="pill-note warn"
@@ -140,126 +111,109 @@ const [showConfirmPassword, setShowConfirmPassword] =
 
         <form onSubmit={handleSubmit}>
           <div className="field">
-  <label>Current Password</label>
+            <label htmlFor="currentPassword">Current Password</label>
 
-  <div className="searchbar">
-    <span className="ico">
-      <Lock size={16} />
-    </span>
+            <div className="searchbar change-password-input">
+              <span className="ico">
+                <Lock size={16} />
+              </span>
 
-    <input
-      className="input"
-      type={showCurrentPassword ? "text" : "password"}
-      placeholder="Enter current password"
-      value={currentPassword}
-      onChange={(e) =>
-        setCurrentPassword(e.target.value)
-      }
-    />
+              <input
+                id="currentPassword"
+                className="input"
+                type={showCurrentPassword ? "text" : "password"}
+                placeholder="Enter current password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                autoComplete="current-password"
+              />
 
-    <button
-      type="button"
-      className="password-eye"
-      onClick={() =>
-        setShowCurrentPassword(!showCurrentPassword)
-      }
-    >
-      {showCurrentPassword ? (
-        <EyeOff size={18} />
-      ) : (
-        <Eye size={18} />
-      )}
-    </button>
-  </div>
-</div>
+              <button
+                type="button"
+                className="password-eye"
+                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                aria-label={
+                  showCurrentPassword
+                    ? "Hide current password"
+                    : "Show current password"
+                }
+              >
+                {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
 
+          <div className="field">
+            <label htmlFor="newPassword">New Password</label>
 
-<div className="field">
-  <label>New Password</label>
+            <div className="searchbar change-password-input">
+              <span className="ico">
+                <Lock size={16} />
+              </span>
 
-  <div className="searchbar">
-    <span className="ico">
-      <Lock size={16} />
-    </span>
+              <input
+                id="newPassword"
+                className="input"
+                type={showNewPassword ? "text" : "password"}
+                placeholder="Enter new password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                autoComplete="new-password"
+              />
 
-    <input
-      className="input"
-      type={showNewPassword ? "text" : "password"}
-      placeholder="Enter new password"
-      value={newPassword}
-      onChange={(e) =>
-        setNewPassword(e.target.value)
-      }
-    />
+              <button
+                type="button"
+                className="password-eye"
+                onClick={() => setShowNewPassword(!showNewPassword)}
+                aria-label={
+                  showNewPassword ? "Hide new password" : "Show new password"
+                }
+              >
+                {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
 
-    <button
-      type="button"
-      className="password-eye"
-      onClick={() =>
-        setShowNewPassword(!showNewPassword)
-      }
-    >
-      {showNewPassword ? (
-        <EyeOff size={18} />
-      ) : (
-        <Eye size={18} />
-      )}
-    </button>
-  </div>
-</div>
+          <div className="field">
+            <label htmlFor="confirmPassword">Confirm New Password</label>
 
+            <div className="searchbar change-password-input">
+              <span className="ico">
+                <Lock size={16} />
+              </span>
 
-<div className="field">
-  <label>Confirm New Password</label>
+              <input
+                id="confirmPassword"
+                className="input"
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm new password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                autoComplete="new-password"
+              />
 
-  <div className="searchbar">
-    <span className="ico">
-      <Lock size={16} />
-    </span>
-
-    <input
-      className="input"
-      type={showConfirmPassword ? "text" : "password"}
-      placeholder="Confirm new password"
-      value={confirmPassword}
-      onChange={(e) =>
-        setConfirmPassword(e.target.value)
-      }
-    />
-
-    <button
-      type="button"
-      className="password-eye"
-      onClick={() =>
-        setShowConfirmPassword(!showConfirmPassword)
-      }
-    >
-      {showConfirmPassword ? (
-        <EyeOff size={18} />
-      ) : (
-        <Eye size={18} />
-      )}
-    </button>
-  </div>
-</div>
-
-         
-
-          
-
-         
+              <button
+                type="button"
+                className="password-eye"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                aria-label={
+                  showConfirmPassword
+                    ? "Hide confirm password"
+                    : "Show confirm password"
+                }
+              >
+                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
 
           <button
             type="submit"
-            className="btn btn-primary"
-            style={{
-              width: "100%",
-              marginTop: "10px",
-            }}
+            className="btn btn-primary change-password-submit"
+            disabled={loading}
           >
-            Change Password
+            {loading ? "Updating Password..." : "Change Password"}
           </button>
-
         </form>
       </div>
     </div>
